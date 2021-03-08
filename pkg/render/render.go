@@ -7,23 +7,27 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"github.com/jackedelic/go-overview-trevor-sawler/pkg/config"
 )
 
-var functions = make(map[string]interface{})
+var functions = template.FuncMap{}
+
+var app *config.AppConfig
+
+func NewConfig(a *config.AppConfig) {
+	app = a
+}
 
 // RenderTemplate renders templates
 func RenderTemplate(w http.ResponseWriter, filename string) {
-	tmplCache, err := CreateTemplateCache(filename)
-	if err != nil {
-		log.Fatal("error creating template cache", err)
-		return
-	}
+	tmplCache := app.TemplateCache
 	t, ok := tmplCache[filename]
 	if !ok {
 		log.Fatal(fmt.Sprintf("%s does not exist. ", filename))
 	}
 	buf := new(bytes.Buffer)
-	err = t.Execute(buf, nil)
+	err := t.Execute(buf, nil)
 	if err != nil {
 		fmt.Println("Error parsing template:", err)
 	}
@@ -34,8 +38,8 @@ func RenderTemplate(w http.ResponseWriter, filename string) {
 }
 
 // RenderTemplates creates a mapping of template file name to its parsed template.
-func CreateTemplateCache(tmpl string) (map[string]*template.Template, error) {
-	fmt.Println("create template cache", tmpl)
+func CreateTemplateCache() (map[string]*template.Template, error) {
+	fmt.Println("create template cache")
 	myCache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob("./templates/*.page.tmpl")
