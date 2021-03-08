@@ -9,28 +9,46 @@ import (
 	"path/filepath"
 
 	"github.com/jackedelic/go-overview-trevor-sawler/pkg/config"
+	"github.com/jackedelic/go-overview-trevor-sawler/pkg/models"
 )
 
 var functions = template.FuncMap{}
 
 var app *config.AppConfig
 
+// NewConfig assigns the input AppConfig to local app
 func NewConfig(a *config.AppConfig) {
 	app = a
 }
 
+// AddDefaultData adds more data onto the input TemplateData, and returns the extended TemplateData
+func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+	return td
+}
+
 // RenderTemplate renders templates
-func RenderTemplate(w http.ResponseWriter, filename string) {
-	tmplCache := app.TemplateCache
+func RenderTemplate(w http.ResponseWriter, filename string, td *models.TemplateData) {
+	var tmplCache map[string]*template.Template
+	if app.UseCache {
+		tmplCache = app.TemplateCache
+	} else {
+		tmplCache, _ = CreateTemplateCache()
+	}
+
 	t, ok := tmplCache[filename]
 	if !ok {
 		log.Fatal(fmt.Sprintf("%s does not exist. ", filename))
 	}
+
 	buf := new(bytes.Buffer)
-	err := t.Execute(buf, nil)
+
+	td = AddDefaultData(td)
+
+	err := t.Execute(buf, td)
 	if err != nil {
 		fmt.Println("Error parsing template:", err)
 	}
+
 	_, err = buf.WriteTo(w)
 	if err != nil {
 		fmt.Println("error writing template to the response writer", err)

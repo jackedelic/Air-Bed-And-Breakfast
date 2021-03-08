@@ -4,20 +4,9 @@ import (
 	"net/http"
 
 	"github.com/jackedelic/go-overview-trevor-sawler/pkg/config"
+	"github.com/jackedelic/go-overview-trevor-sawler/pkg/models"
 	"github.com/jackedelic/go-overview-trevor-sawler/pkg/render"
 )
-
-// TemplateData holds data sent from handler to template
-type TemplateData struct {
-	StringMap map[string]string
-	IntMap    map[string]int
-	FloatMap  map[string]float32
-	Data      map[string]interface{}
-	CSRFToken string
-	Flash     string
-	Warning   string
-	Error     string
-}
 
 // Repo is a pointer to a Repository
 var Repo *Repository
@@ -42,10 +31,14 @@ func NewHandlers(repo *Repository) {
 
 // Home handles home page
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, "home.page.tmpl")
+	render.RenderTemplate(w, "home.page.tmpl", &models.TemplateData{})
 }
 
 // About handles about page
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, "about.page.tmpl")
+	stringMap := map[string]string{"test": "Hello Again"}
+
+	render.RenderTemplate(w, "about.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
 }
