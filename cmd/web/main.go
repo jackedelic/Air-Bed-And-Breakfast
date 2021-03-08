@@ -9,6 +9,8 @@ import (
 	"github.com/jackedelic/go-overview-trevor-sawler/pkg/render"
 )
 
+const portNumber = ":8080"
+
 func main() {
 	var app config.AppConfig
 	repo := handlers.NewRepo(&app)
@@ -22,7 +24,10 @@ func main() {
 	app.TemplateCache = templateCache
 	app.UseCache = false
 	render.NewConfig(&app)
-	http.HandleFunc("/", repo.Home)
-	http.HandleFunc("/about", repo.About)
-	_ = http.ListenAndServe(":8080", nil)
+	srv := &http.Server{
+		Addr:    portNumber,
+		Handler: routes(&app),
+	}
+	err = srv.ListenAndServe()
+	log.Fatal(err)
 }
