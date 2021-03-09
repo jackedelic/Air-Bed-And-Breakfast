@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/jackedelic/go-overview-trevor-sawler/pkg/config"
-	"github.com/jackedelic/go-overview-trevor-sawler/pkg/models"
+	"github.com/jackedelic/bookings/pkg/config"
+	"github.com/jackedelic/bookings/pkg/models"
 )
 
 var functions = template.FuncMap{}
