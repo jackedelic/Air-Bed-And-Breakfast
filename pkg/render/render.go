@@ -82,7 +82,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		// make sure there exists a *.layout.tmpl before we actually parse the template t
 		if len(matches) > 0 {
 			// parse this particular smtg.page.tmpl against all layout.tmpl files
-			t, err = t.ParseGlob("./templates/*.layout.tmpl")
+			t, err = t.ParseGlob("./templates/*.layout.tmpl") // same as t.ParseFiles("a.layout.tmpl","b.layout.tmpl"...)
 			if err != nil {
 				return myCache, err
 			}
