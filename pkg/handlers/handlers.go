@@ -47,3 +47,43 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 		StringMap: stringMap,
 	})
 }
+
+// MakeReservation handlers /make-reservatiojn
+func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
+	stringMap := map[string]string{}
+	render.RenderTemplate(w, "make-reservation.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
+}
+
+// GeneralsQuarters handles /generals-quarter
+func (m *Repository) GeneralsQuarters(w http.ResponseWriter, r *http.Request) {
+	stringMap := map[string]string{}
+	render.RenderTemplate(w, "generals-quarters.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
+}
+
+// MajorsSuite handles /major-suite
+func (m *Repository) MajorsSuite(w http.ResponseWriter, r *http.Request) {
+	stringMap := map[string]string{}
+	render.RenderTemplate(w, "majors-suite.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
+}
+
+// SearchAvailability handles /search-availability
+func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
+	stringMap := map[string]string{}
+	render.RenderTemplate(w, "search-availability.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
+}
+
+// Contact handles /contact
+func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
+	stringMap := map[string]string{}
+	render.RenderTemplate(w, "contact.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+	})
+}

@@ -1,0 +1,67 @@
+{{ template "base" .}}
+
+{{ define "content" }}
+<div class="container">
+  <div class="row py-5">
+    <div class="col-6 mx-auto">
+      <h1>Make Reservation</h1>
+      <form method="POST" class="needs-validation" novalidate>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email address</label>
+          <input
+            required
+            type="email"
+            class="form-control"
+            id="email"
+            aria-describedby="dateHelp"
+          />
+          <div id="email" class="form-text">
+            We only send important stuffs to your precious inbox
+          </div>
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Only valid email</div>
+        </div>
+        <div class="mb-3">
+          <label for="first_name" class="form-label">First Name</label>
+          <input required type="text" class="form-control" id="text" />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Kindly enter your first name</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="last_name" class="form-label">Last Name</label>
+          <input required type="text" class="form-control" id="text" />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Kindly enter your last name</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Make Reservation</button>
+      </form>
+    </div>
+  </div>
+</div>
+{{ end }}
+{{ define "js" }}
+<script>
+  ;(function () {
+    'use strict'
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.querySelectorAll('.needs-validation')
+
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener(
+        'submit',
+        function (event) {
+          if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+
+          form.classList.add('was-validated')
+        },
+        false
+      )
+    })
+  })()
+</script>
+{{ end }}

@@ -1,0 +1,15 @@
+#main-carousel img {
+  height: 600px;
+  object-fit: cover;
+}
+.notie-container {
+  z-index: 1030;
+}
+.datepicker {
+  z-index: 1070;
+}
+.generals-quarters img,
+.majors-suite img {
+  height: 600px;
+  object-fit: cover;
+}

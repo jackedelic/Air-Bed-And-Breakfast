@@ -1,0 +1,78 @@
+{{ template "base" . }}
+
+{{ define "content" }}
+<div class="majors-suite">
+  <div class="row">
+    <div class="col">
+      <img
+        src="static/images/majors-suite.jpg"
+        class="d-block w-100 img-fluid"
+        alt="Drinking Coffee"
+      />
+    </div>
+  </div>
+  <div class="row">
+    <div class="col text-center">
+      <a id="search-availability" href="#!" class="btn btn-success"
+        >Search Availability</a
+      >
+    </div>
+  </div>
+</div>
+{{ end }}
+{{ define "js" }}
+<script>
+  document
+    .getElementById('search-availability')
+    .addEventListener('click', () => {
+      popupDateInput({ title: 'Pick a date range' })
+    })
+  async function popupDateInput({ title }) {
+    const htmlInput = `
+        <form method="POST">
+            <div class="row" id="reservation-dates">
+              <div class="col">
+                <div class="mb-3">
+                  <input
+                    required
+                    class="form-control"
+                    name="start"
+                    aria-describedby="dateHelp"
+                    placeholder="Arrival date"
+                  />
+                </div>
+              </div>
+              <div class="col">
+                <div class="mb-3">
+                  <input
+                    required
+                    class="form-control"
+                    name="end"
+                    aria-describedby="dateHelp"
+                    placeholder="Departure date"
+                  />
+                </div>
+              </div>
+            </div>
+            <hr />
+          </form>
+        `
+
+    const { value: formValues } = await Swal.fire({
+      title,
+      icon: 'info',
+      html: htmlInput,
+      showCancelButton: true,
+      focusConfirm: true,
+      confirmButtonText: 'Confirm',
+      willOpen: () => {
+        const rangeInputs = document.getElementById('reservation-dates')
+        const datePicker = new DateRangePicker(rangeInputs, {
+          format: 'dd-mm-yyyy'
+        })
+      },
+      didOpen: () => {}
+    })
+  }
+</script>
+{{ end }}
