@@ -50,12 +50,17 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// MakeReservation handlers /make-reservatiojn
+// MakeReservation handles GET /make-reservatiojn
 func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 	stringMap := map[string]string{}
 	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
 	})
+}
+
+// PostReservation handles POST /post-reservation
+func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+
 }
 
 // GeneralsQuarters handles /generals-quarter
