@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/jackedelic/bookings/pkg/config"
-	"github.com/jackedelic/bookings/pkg/models"
+	"github.com/jackedelic/bookings/internal/config"
+	"github.com/jackedelic/bookings/internal/models"
+	"github.com/justinas/nosurf"
 )
 
 var functions = template.FuncMap{}
@@ -22,12 +23,13 @@ func NewConfig(a *config.AppConfig) {
 }
 
 // AddDefaultData adds more data onto the input TemplateData, and returns the extended TemplateData
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
 // RenderTemplate renders templates
-func RenderTemplate(w http.ResponseWriter, filename string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) {
 	var tmplCache map[string]*template.Template
 	if app.UseCache {
 		tmplCache = app.TemplateCache
@@ -42,7 +44,7 @@ func RenderTemplate(w http.ResponseWriter, filename string, td *models.TemplateD
 
 	buf := new(bytes.Buffer)
 
-	td = AddDefaultData(td)
+	td = AddDefaultData(td, r)
 
 	err := t.Execute(buf, td)
 	if err != nil {
@@ -55,7 +57,7 @@ func RenderTemplate(w http.ResponseWriter, filename string, td *models.TemplateD
 	}
 }
 
-// RenderTemplates creates a mapping of template file name to its parsed template.
+// CreateTemplateCache creates a mapping of template file name to its parsed template.
 func CreateTemplateCache() (map[string]*template.Template, error) {
 	fmt.Println("create template cache")
 	myCache := map[string]*template.Template{}

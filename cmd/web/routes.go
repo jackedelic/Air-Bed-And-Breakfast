@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackedelic/bookings/pkg/config"
-	"github.com/jackedelic/bookings/pkg/handlers"
+	"github.com/jackedelic/bookings/internal/config"
+	"github.com/jackedelic/bookings/internal/handlers"
 )
 
 func routes(app *config.AppConfig) http.Handler {
@@ -24,7 +24,10 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/generals-quarters", handlers.Repo.GeneralsQuarters)
 	mux.Get("/majors-suite", handlers.Repo.MajorsSuite)
 	mux.Get("/contact", handlers.Repo.Contact)
+
 	mux.Get("/search-availability", handlers.Repo.SearchAvailability)
+	mux.Post("/search-availability", handlers.Repo.PostSearchAvailability)
+	mux.Post("/receive-json", handlers.Repo.ReceiveJSON)
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))

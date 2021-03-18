@@ -22,57 +22,45 @@
 {{ end }}
 {{ define "js" }}
 <script>
+  const htmlInput = `
+            <form method="POST">
+                <div class="row" id="reservation-dates">
+                  <div class="col">
+                    <div class="mb-3">
+                      <input
+                        required
+                        class="form-control"
+                        name="start"
+                        aria-describedby="dateHelp"
+                        placeholder="Arrival date"
+                      />
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="mb-3">
+                      <input
+                        required
+                        class="form-control"
+                        name="end"
+                        aria-describedby="dateHelp"
+                        placeholder="Departure date"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            `
+  async function callback(value) {
+    const start = document.querySelector('input[name=start]')
+    const end = document.querySelector('input[name=end]')
+    console.log(start.value)
+    console.log(end.value)
+    console.log('value: ', value)
+  }
   document
     .getElementById('search-availability')
     .addEventListener('click', () => {
-      popupDateInput({ title: 'Pick a date range' })
+      customAlertHtml({ title: 'Pick a date range', htmlInput, cb: callback })
     })
-  async function popupDateInput({ title }) {
-    const htmlInput = `
-        <form method="POST">
-            <div class="row" id="reservation-dates">
-              <div class="col">
-                <div class="mb-3">
-                  <input
-                    required
-                    class="form-control"
-                    name="start"
-                    aria-describedby="dateHelp"
-                    placeholder="Arrival date"
-                  />
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <input
-                    required
-                    class="form-control"
-                    name="end"
-                    aria-describedby="dateHelp"
-                    placeholder="Departure date"
-                  />
-                </div>
-              </div>
-            </div>
-            <hr />
-          </form>
-        `
-
-    const { value: formValues } = await Swal.fire({
-      title,
-      icon: 'info',
-      html: htmlInput,
-      showCancelButton: true,
-      focusConfirm: true,
-      confirmButtonText: 'Confirm',
-      willOpen: () => {
-        const rangeInputs = document.getElementById('reservation-dates')
-        const datePicker = new DateRangePicker(rangeInputs, {
-          format: 'dd-mm-yyyy'
-        })
-      },
-      didOpen: () => {}
-    })
-  }
 </script>
 {{ end }}

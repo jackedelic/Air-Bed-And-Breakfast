@@ -157,6 +157,27 @@
       integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0"
       crossorigin="anonymous"
     ></script>
+    <script>
+      async function customAlertHtml({ title, html, cb }) {
+        const { value } = await Swal.fire({
+          title,
+          html: htmlInput,
+          showCancelButton: true,
+          focusConfirm: true,
+          confirmButtonText: 'Confirm',
+          willOpen: () => {
+            const rangeInputs = document.getElementById('reservation-dates')
+            const datePicker = new DateRangePicker(rangeInputs, {
+              format: 'dd-mm-yyyy'
+            })
+          },
+          preConfirm: () => {}
+        })
+        if (value !== undefined && cb !== null) {
+          cb(value)
+        }
+      }
+    </script>
     {{block "js" .}}
     {{ end }}
   </body>
