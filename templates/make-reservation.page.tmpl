@@ -5,33 +5,44 @@
   <div class="row py-5">
     <div class="col-6 mx-auto">
       <h1>Make Reservation</h1>
-      <form method="POST" class="needs-validation" novalidate>
+      {{ $res := index .Data "reservation" }}
+      <form action="/make-reservation?k=v" method="POST" class="" novalidate>
         <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
         <div class="mb-3">
           <label for="email" class="form-label">Email address</label>
-          <input
-            required
-            type="email"
-            class="form-control"
-            id="email"
-            aria-describedby="dateHelp"
-          />
+          {{with .Form.Errors.Get "email"}}
+          <label for="email" class="text-danger">{{.}}</label>
+          {{ end }}
+          <input required name="email" type="email" class="form-control
+          {{with .Form.Errors.Get "email"}}is-invalid{{ end }}" id="email"
+          value="{{ $res.Email }}" aria-describedby="dateHelp" />
           <div id="email" class="form-text">
             We only send important stuffs to your precious inbox
           </div>
           <div class="valid-feedback">Looks good!</div>
           <div class="invalid-feedback">Only valid email</div>
         </div>
+
         <div class="mb-3">
           <label for="first_name" class="form-label">First Name</label>
-          <input required type="text" class="form-control" id="text" />
+          {{with .Form.Errors.Get "first_name"}}
+          <label for="first_name" class="text-danger">{{.}}</label>
+          {{ end }}
+          <input required name="first_name" type="text" class="form-control
+          {{with .Form.Errors.Get "first_name"}}is-invalid{{ end }}"
+          id="first_name" value="{{ $res.FirstName }}" />
           <div class="valid-feedback">Looks good!</div>
           <div class="invalid-feedback">Kindly enter your first name</div>
         </div>
 
         <div class="mb-3">
           <label for="last_name" class="form-label">Last Name</label>
-          <input required type="text" class="form-control" id="text" />
+          {{ with .Form.Errors.Get "last_name"}}
+          <label for="last_name" class="text-danger">{{.}}</label>
+          {{ end }}
+          <input required name="last_name" type="text" class="form-control
+          {{with .Form.Errors.Get "last_name"}}is-invalid{{ end }}"
+          id="last_name" value="{{ $res.LastName }}" />
           <div class="valid-feedback">Looks good!</div>
           <div class="invalid-feedback">Kindly enter your last name</div>
         </div>

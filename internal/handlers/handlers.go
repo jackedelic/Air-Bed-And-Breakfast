@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/jackedelic/bookings/forms"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
@@ -50,17 +51,52 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// MakeReservation handles GET /make-reservatiojn
+// MakeReservation handles GET /make-reservation
 func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 	stringMap := map[string]string{}
+	emptyReservation := models.Reservation{}
+	data := make(map[string]interface{})
+	data["reservation"] = emptyReservation
 	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
+		Data:      data,
+		Form:      forms.New(nil),
 	})
 }
 
 // PostReservation handles POST /post-reservation
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Email:     r.Form.Get("email"),
+		Phone:     r.Form.Get("phone"),
+	}
+
+	form := forms.New(r.PostForm)
+	log.Println(r.PostForm)
+	log.Println(r.Form)
+	// form.Has("first_name", r)
+
+	form.Required("email", "first_name", "last_name")
+	form.MinLength("first_name", 3, r)
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		data := make(map[string]interface{})
+		data["reservation"] = reservation
+		render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
 }
 
 // GeneralsQuarters handles /generals-quarter
