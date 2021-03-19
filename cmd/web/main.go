@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/handlers"
+	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
 )
 
@@ -18,6 +20,8 @@ var app config.AppConfig
 var session *scs.SessionManager
 
 func main() {
+	gob.Register(models.Reservation{})
+	// Register session for all requests
 	session := scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Cookie.Persist = true

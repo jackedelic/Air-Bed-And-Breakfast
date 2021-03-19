@@ -1,6 +1,8 @@
 package models
 
-import "github.com/jackedelic/bookings/forms"
+import (
+	"github.com/jackedelic/bookings/forms"
+)
 
 // TemplateData holds data sent from handler to template
 type TemplateData struct {
