@@ -119,11 +119,14 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+
 	data := make(map[string]interface{})
 	data["reservation"] = reservation
 	render.RenderTemplate(w, r, "reservation-summary.page.tmpl", &models.TemplateData{
 		Data: data,
 	})
+	// Remove the reservation data from the session
+	m.App.Session.Remove(r.Context(), "reservation")
 }
 
 // GeneralsQuarters handles /generals-quarter
