@@ -117,7 +117,15 @@
           position: 'top' // optional, default = 'top', enum: ['top', 'bottom']
         })
       }
-      // notify({ msg: 'hello', duration: 10 })
+      {{ with .Error }}
+        notify({msg: "{{.}}", msgType: "error"})
+      {{end}}
+      {{ with .Flash}}
+        notify({msg: "{{.}}", msgType: "success"})
+      {{end}}
+      {{ with .Warning}}
+        notify({msg: "{{.}}", msgType: "warning"})
+      {{end}}
       function showAlert({ title, text, icon, confirmButtonText }) {
         Swal.fire({
           title,
