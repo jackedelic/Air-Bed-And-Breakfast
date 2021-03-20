@@ -13,6 +13,8 @@ import (
 	"github.com/justinas/nosurf"
 )
 
+var pathToTemplates = "./templates"
+
 var functions = template.FuncMap{}
 
 var app *config.AppConfig
@@ -65,7 +67,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	fmt.Println("create template cache")
 	myCache := map[string]*template.Template{}
 
-	pages, err := filepath.Glob("./templates/*.page.tmpl")
+	pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.tmpl", pathToTemplates))
 	if err != nil {
 		return myCache, err
 	}
@@ -79,7 +81,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		}
 
 		// finds *.layout.tmpl files, just to check if there exists one.
-		matches, err := filepath.Glob("./templates/*.layout.tmpl")
+		matches, err := filepath.Glob(fmt.Sprintf("%s/*.layout.tmpl", pathToTemplates))
 		if err != nil {
 			return myCache, err
 		}
@@ -87,7 +89,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		// make sure there exists a *.layout.tmpl before we actually parse the template t
 		if len(matches) > 0 {
 			// parse this particular smtg.page.tmpl against all layout.tmpl files
-			t, err = t.ParseGlob("./templates/*.layout.tmpl") // same as t.ParseFiles("a.layout.tmpl","b.layout.tmpl"...)
+			t, err = t.ParseGlob(fmt.Sprintf("%s/*.layout.tmpl", pathToTemplates)) // same as t.ParseFiles("a.layout.tmpl","b.layout.tmpl"...)
 			if err != nil {
 				return myCache, err
 			}
