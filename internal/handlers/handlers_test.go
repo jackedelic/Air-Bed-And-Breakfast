@@ -3,9 +3,11 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
+// postData holds the key-value pairs of form inputs (name-value pairs)
 type postData struct {
 	key   string
 	value string
@@ -26,6 +28,18 @@ var theTests = []struct {
 	{"majors suite page", "/majors-suite", "GET", []postData{}, http.StatusOK},
 	{"contact page", "/contact", "GET", []postData{}, http.StatusOK},
 	{"search availability page", "/search-availability", "GET", []postData{}, http.StatusOK},
+	{"make reservation", "/make-reservation", "POST", []postData{
+		{key: "first_name", value: "Jack"},
+		{key: "last_name", value: "Wong"},
+		{key: "email", value: "jackwong3101@yahoo.com"},
+	}, http.StatusOK},
+	{"search availability", "/search-availability", "POST", []postData{
+		{key: "start", value: "31-01-2021"},
+		{key: "end", value: "01-02-2021"},
+	}, http.StatusOK},
+	{"receive json", "/receive-json", "POST", []postData{
+		{key: "", value: ""},
+	}, http.StatusOK},
 }
 
 func TestHandlers(t *testing.T) {
@@ -35,14 +49,32 @@ func TestHandlers(t *testing.T) {
 
 	for _, test := range theTests {
 		client := server.Client()
-		resp, err := client.Get(server.URL + test.urlPath)
-		if err != nil {
-			t.Log(err)
-			t.Error(err)
-		}
+		switch test.method {
+		case "GET":
+			resp, err := client.Get(server.URL + test.urlPath)
+			if err != nil {
+				t.Log(err)
+				t.Error(err)
+			}
 
-		if resp.StatusCode != test.expectedStatusCode {
-			t.Errorf("for %s, expected %d but got %d", test.name, test.expectedStatusCode, resp.StatusCode)
+			if resp.StatusCode != test.expectedStatusCode {
+				t.Errorf("for %s, expected %d but got %d", test.name, test.expectedStatusCode, resp.StatusCode)
+			}
+		case "POST":
+			var formData = url.Values{}
+			for _, pData := range test.params {
+				formData.Add(pData.key, pData.value)
+			}
+
+			resp, err := client.PostForm(server.URL+test.urlPath, formData)
+			if err != nil {
+				t.Log(err)
+				t.Error(err)
+			}
+
+			if resp.StatusCode != test.expectedStatusCode {
+				t.Errorf("for %s, expected %d but got %d", test.name, test.expectedStatusCode, resp.StatusCode)
+			}
 		}
 	}
 }

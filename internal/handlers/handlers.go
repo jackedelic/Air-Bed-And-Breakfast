@@ -64,7 +64,7 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// PostReservation handles POST /post-reservation
+// PostReservation handles POST /make-reservation
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
