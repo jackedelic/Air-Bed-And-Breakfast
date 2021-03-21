@@ -33,7 +33,7 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-// RenderTemplate renders templates
+// RenderTemplate renders templates and writes to ResponseWriter
 func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) error {
 	var tmplCache map[string]*template.Template
 	if app.UseCache {
