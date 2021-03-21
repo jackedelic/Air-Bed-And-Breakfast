@@ -34,7 +34,7 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 }
 
 // RenderTemplate renders templates
-func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) error {
 	var tmplCache map[string]*template.Template
 	if app.UseCache {
 		tmplCache = app.TemplateCache
@@ -44,7 +44,8 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td 
 
 	t, ok := tmplCache[filename]
 	if !ok {
-		log.Fatal(fmt.Sprintf("%s does not exist. ", filename))
+		log.Printf(fmt.Sprintf("%s does not exist. ", filename))
+		return fmt.Errorf("%s does not exists", filename)
 	}
 
 	buf := new(bytes.Buffer)
@@ -54,12 +55,15 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td 
 	err := t.Execute(buf, td)
 	if err != nil {
 		fmt.Println("Error parsing template:", err)
+		return err
 	}
 
 	_, err = buf.WriteTo(w)
 	if err != nil {
 		fmt.Println("error writing template to the response writer", err)
+		return err
 	}
+	return nil
 }
 
 // CreateTemplateCache creates a mapping of template file name to its parsed template.
