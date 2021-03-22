@@ -44,7 +44,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td 
 
 	t, ok := tmplCache[filename]
 	if !ok {
-		log.Printf(fmt.Sprintf("%s does not exist. ", filename))
+		log.Printf("%s does not exist. ", filename)
 		return fmt.Errorf("%s does not exists", filename)
 	}
 

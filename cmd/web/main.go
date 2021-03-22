@@ -4,9 +4,11 @@ import (
 	"encoding/gob"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/jackedelic/bookings/helpers"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/handlers"
 	"github.com/jackedelic/bookings/internal/models"
@@ -16,7 +18,6 @@ import (
 const portNumber = ":8080"
 
 var app config.AppConfig
-
 var session *scs.SessionManager
 
 func main() {
@@ -35,8 +36,12 @@ func main() {
 
 func run() error {
 	gob.Register(models.Reservation{})
+	app.InProduction = false // Change this to true when in production
+	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.ErrorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
 	// Register session for all requests
-	session := scs.New()
+	session = scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Cookie.Persist = true
 	session.Cookie.SameSite = http.SameSiteLaxMode
@@ -57,5 +62,7 @@ func run() error {
 	repo := handlers.NewRepo(&app) // create a new repo holding the app config we just created
 	handlers.NewHandlers(repo)     // assign this newly created repo to handlers.Repo
 	render.NewConfig(&app)
+	helpers.NewHelpers(&app)
+
 	return nil
 }
