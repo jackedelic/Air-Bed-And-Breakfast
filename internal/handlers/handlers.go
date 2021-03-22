@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jackedelic/bookings/forms"
+	"github.com/jackedelic/bookings/helpers"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
@@ -68,7 +69,7 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -177,6 +178,7 @@ func (m *Repository) ReceiveJSON(w http.ResponseWriter, r *http.Request) {
 	jr := JSONResponse{Ok: true, Message: "You are in /receive-json"}
 	jByte, err := json.MarshalIndent(jr, "", "    ")
 	if err != nil {
+		helpers.ServerError(w, err)
 		w.Write([]byte("Got error marshalling the json response"))
 	}
 	log.Println(string(jByte))
