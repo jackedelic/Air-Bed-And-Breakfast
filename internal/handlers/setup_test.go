@@ -47,13 +47,13 @@ func getRoutes() http.Handler {
 	}
 
 	app.TemplateCache = templateCache
-	app.UseCache = true // if false, a route handler will call render.RenderTemplate which calls CreateTemplate,
+	app.UseCache = true // if false, a route handler will call render.Template which calls CreateTemplate,
 	// but we don want to touch CreateTemplate (from render)
 
 	// handlers and render packages have access to the same config.AppConfig
 	repo := NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
 	NewHandlers(repo)                  // assign this newly created repo to Repo
-	render.NewConfig(&app)
+	render.NewRenderer(&app)
 
 	mux := chi.NewMux()
 	mux.Use(middleware.Recoverer)

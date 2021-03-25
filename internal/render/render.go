@@ -19,8 +19,8 @@ var functions = template.FuncMap{}
 
 var app *config.AppConfig
 
-// NewConfig assigns the input AppConfig to local app
-func NewConfig(a *config.AppConfig) {
+// NewRenderer assigns the input AppConfig to local app
+func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
@@ -33,8 +33,8 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-// RenderTemplate renders templates and writes to ResponseWriter
-func RenderTemplate(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) error {
+// Template renders templates and writes to ResponseWriter
+func Template(w http.ResponseWriter, r *http.Request, filename string, td *models.TemplateData) error {
 	var tmplCache map[string]*template.Template
 	if app.UseCache {
 		tmplCache = app.TemplateCache

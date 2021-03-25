@@ -47,6 +47,10 @@ func main() {
 // run sets some app-wide configurations by populating global app
 func run() error {
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+	gob.Register(models.RoomRestriction{})
 	app.InProduction = false // Change this to true when in production
 	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.ErrorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -72,7 +76,7 @@ func run() error {
 	// handlers and render packages have access to the same config.AppConfig
 	repo := handlers.NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
 	handlers.NewHandlers(repo)                  // assign this newly created repo to handlers.Repo
-	render.NewConfig(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
 	return nil

@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 	session.Cookie.Secure = testApp.InProduction
 
 	testApp.Session = session
-	NewConfig(&testApp)
+	NewRenderer(&testApp)
 	os.Exit(m.Run())
 }
 

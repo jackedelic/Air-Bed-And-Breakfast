@@ -33,7 +33,7 @@ func withSession(r *http.Request) (*http.Request, error) {
 	return r, nil
 }
 
-func TestRenderTemplate(t *testing.T) {
+func TestTemplate(t *testing.T) {
 	pathToTemplates = "../../templates"
 
 	// Creates template cache (necessary cur CreateTemplateCache requires initialization of cache)
@@ -55,14 +55,14 @@ func TestRenderTemplate(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Test RenderTemplate using the created request
+	// Test Template using the created request
 	var myWriter myResponseWriter
-	err = RenderTemplate(&myWriter, req, "home.page.tmpl", &models.TemplateData{})
+	err = Template(&myWriter, req, "home.page.tmpl", &models.TemplateData{})
 	if err != nil {
 		t.Error("error writing template to browser")
 	}
 
-	err = RenderTemplate(&myWriter, req, "non-existent.page.tmpl", &models.TemplateData{})
+	err = Template(&myWriter, req, "non-existent.page.tmpl", &models.TemplateData{})
 	if err == nil {
 		t.Error("rendered template that does not exist")
 	}

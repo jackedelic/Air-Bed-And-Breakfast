@@ -2,3 +2,4 @@ marshal.go
 *.test
 *.out
 database.yml
+bookings
