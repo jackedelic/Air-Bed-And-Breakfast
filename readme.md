@@ -6,3 +6,4 @@ This is the repository for my bookings and reservations project
 - Uses the [chi router](github.com/go-chi/chi/v5)
 - Uses [session management](github.com/justinas/nosurf)
 - Uses [CSRF](github.com/justinas/nosurf)
+- Uses [Fizz](https://gobuffalo.io/en/docs/db/fizz/) for database migration

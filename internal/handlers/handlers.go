@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/jackedelic/bookings/driver"
 	"github.com/jackedelic/bookings/forms"
@@ -78,10 +80,29 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sdStr := r.Form.Get("start_date")
+	sd, err := time.Parse(time.RFC3339, sdStr)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	edStr := r.Form.Get("end_date")
+	ed, err := time.Parse(time.RFC3339, edStr)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
 	reservation := models.Reservation{
 		FirstName: r.Form.Get("first_name"),
 		LastName:  r.Form.Get("last_name"),
 		Email:     r.Form.Get("email"),
+		StartDate: sd,
+		EndDate:   ed,
+		RoomID:    roomID,
 	}
 
 	form := forms.New(r.PostForm)
@@ -102,6 +123,12 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	err = m.DBRepo.InsertReservation(reservation)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
 	// Stores the form data into our session storage (in-memory by default)
 	m.App.Session.Put(r.Context(), "reservation", reservation) // The Session manager takes the session data from
 	// this request's Context (session data is loaded by Session middleware earlier in the handler chain),
