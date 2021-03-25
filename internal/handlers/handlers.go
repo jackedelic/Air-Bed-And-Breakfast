@@ -6,11 +6,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/jackedelic/bookings/driver"
 	"github.com/jackedelic/bookings/forms"
 	"github.com/jackedelic/bookings/helpers"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
+	"github.com/jackedelic/bookings/repository"
+	"github.com/jackedelic/bookings/repository/dbrepo"
 )
 
 // Repo is a pointer to a Repository
@@ -18,13 +21,15 @@ var Repo *Repository
 
 // Repository is a struct that holds AppConfig
 type Repository struct {
-	App *config.AppConfig
+	App    *config.AppConfig
+	DBRepo repository.DatabaseRepo
 }
 
 // NewRepo creates a pointer to a Repository using AppConfig passed to the function.
-func NewRepo(appConfig *config.AppConfig) *Repository {
+func NewRepo(appConfig *config.AppConfig, db driver.DB) *Repository {
 	repo := Repository{
-		App: appConfig,
+		App:    appConfig,
+		DBRepo: dbrepo.NewPostgresRepo(db.SQL, appConfig),
 	}
 	return &repo
 }

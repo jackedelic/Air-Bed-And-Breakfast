@@ -13,6 +13,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackedelic/bookings/driver"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
@@ -50,8 +51,8 @@ func getRoutes() http.Handler {
 	// but we don want to touch CreateTemplate (from render)
 
 	// handlers and render packages have access to the same config.AppConfig
-	repo := NewRepo(&app) // create a new repo holding the app config we just created
-	NewHandlers(repo)     // assign this newly created repo to Repo
+	repo := NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
+	NewHandlers(repo)                  // assign this newly created repo to Repo
 	render.NewConfig(&app)
 
 	mux := chi.NewMux()

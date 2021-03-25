@@ -2,17 +2,20 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/jackedelic/bookings/driver"
 	"github.com/jackedelic/bookings/helpers"
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/handlers"
 	"github.com/jackedelic/bookings/internal/models"
 	"github.com/jackedelic/bookings/internal/render"
+	"github.com/jackedelic/bookings/repository/dbrepo"
 )
 
 const portNumber = ":8080"
@@ -26,6 +29,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	db, err := connectDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	handlers.Repo.DBRepo = dbrepo.NewPostgresRepo(db.SQL, &app)
+	defer db.SQL.Close()
+
 	srv := &http.Server{
 		Addr:    portNumber,
 		Handler: routes(&app),
@@ -34,6 +44,7 @@ func main() {
 	log.Fatal(err)
 }
 
+// run sets some app-wide configurations by populating global app
 func run() error {
 	gob.Register(models.Reservation{})
 	app.InProduction = false // Change this to true when in production
@@ -59,10 +70,35 @@ func run() error {
 	app.UseCache = false
 
 	// handlers and render packages have access to the same config.AppConfig
-	repo := handlers.NewRepo(&app) // create a new repo holding the app config we just created
-	handlers.NewHandlers(repo)     // assign this newly created repo to handlers.Repo
+	repo := handlers.NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
+	handlers.NewHandlers(repo)                  // assign this newly created repo to handlers.Repo
 	render.NewConfig(&app)
 	helpers.NewHelpers(&app)
 
 	return nil
+}
+
+// connectDB connects to the database using driver specified in driver package, and returns the *sql.DB
+func connectDB() (*driver.DB, error) {
+	// Connects to database
+	var (
+		host     = "127.0.0.1"
+		port     = 5432
+		database = "bookings"
+		username = "postgres"
+		password = "password"
+	)
+
+	conn, err := driver.ConnectDB(fmt.Sprintf("host=%s port=%d database=%s user=%s password=%s", host, port, database, username, password))
+	app.InfoLog.Println("Connecting to our database...")
+
+	if err != nil {
+		app.ErrorLog.Panicln("Error connecting to our database :(")
+		log.Fatal(err)
+	}
+
+	conn.SQL.Ping()
+	app.InfoLog.Println("Successfully connected to database :)")
+
+	return conn, nil
 }
