@@ -137,7 +137,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		EndDate:       ed,
 		RoomID:        roomID,
 		ReservationID: newReservationID,
-		RestrictionID: 1,
+		RestrictionID: 1, // Reservation type
 	}
 
 	err = m.DBRepo.InsertRoomRestriction(roomRestriction)

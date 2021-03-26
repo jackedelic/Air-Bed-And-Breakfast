@@ -22,7 +22,7 @@ type Room struct {
 	UpdatedAt time.Time
 }
 
-// Restriction represents the restrictions table
+// Restriction represents the restrictions table. It is either a Reservation or Owner Block type.
 type Restriction struct {
 	ID              int
 	RestrictionName string

@@ -12,6 +12,8 @@ type postgresDBRepo struct {
 	DB  *sql.DB
 }
 
+// NewPostgresRepo initializes a portgrestDBRepo (holding app config and a connected database)
+// and returns it
 func NewPostgresRepo(conn *sql.DB, a *config.AppConfig) repository.DatabaseRepo {
 	repo := &postgresDBRepo{
 		App: a,
