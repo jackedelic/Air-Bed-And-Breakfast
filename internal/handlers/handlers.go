@@ -94,8 +94,10 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
 		helpers.ServerError(w, err)
+		return
 	}
 
+	// Creates Reservation object (corresponds to a row in a db)
 	reservation := models.Reservation{
 		FirstName: r.Form.Get("first_name"),
 		LastName:  r.Form.Get("last_name"),
@@ -108,7 +110,6 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	form := forms.New(r.PostForm)
 	log.Println(r.PostForm)
 	log.Println(r.Form)
-	// form.Has("first_name")
 
 	form.Required("email", "first_name", "last_name")
 	form.MinLength("first_name", 3)
@@ -124,9 +125,25 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.DBRepo.InsertReservation(reservation)
+	newReservationID, err := m.DBRepo.InsertReservation(reservation)
 	if err != nil {
 		helpers.ServerError(w, err)
+		return
+	}
+
+	// Creates a RoomRestriction object (corresponds to a row in a db)
+	roomRestriction := models.RoomRestriction{
+		StartDate:     sd,
+		EndDate:       ed,
+		RoomID:        roomID,
+		ReservationID: newReservationID,
+		RestrictionID: 1,
+	}
+
+	err = m.DBRepo.InsertRoomRestriction(roomRestriction)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
 	}
 
 	// Stores the form data into our session storage (in-memory by default)
