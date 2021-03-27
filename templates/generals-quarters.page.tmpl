@@ -1,5 +1,4 @@
 {{ template "base" .}}
-
 {{ define "content" }}
 <div class="generals-quarters">
   <div class="row">
@@ -62,9 +61,6 @@
       body: formData
     })
       .then(res => {
-        if (res.redirected) {
-          window.location.href = res.url
-        }
         res.text()
       })
       .then(data => console.log(data))

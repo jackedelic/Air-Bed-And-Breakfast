@@ -225,11 +225,26 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	// No room available for the given date range
 	if len(rooms) == 0 {
 		m.App.Session.Put(r.Context(), "error", "No availability")
-		http.Redirect(w, r, "/search-availability", http.StatusSeeOther)
+		// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
+		http.Redirect(w, r, r.Referer(), http.StatusTemporaryRedirect)
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
+	// For use in template data
+	data := make(map[string]interface{})
+	data["rooms"] = rooms
+	// Store startdate and enddate in session for use in redirection
+	res := models.Reservation{
+		StartDate: sd,
+		EndDate:   ed,
+	}
+
+	m.App.Session.Put(r.Context(), "reservation", res)
+
+	// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
+	render.Template(w, r, "choose-room.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
 }
 
 // Contact handles /contact
