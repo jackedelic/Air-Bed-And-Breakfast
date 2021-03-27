@@ -93,12 +93,12 @@ func (m *postgresDBRepo) SearchAvailableRoomsByDates(start, end time.Time) ([]mo
 
 	stmt := `
 		select
-			r.id, r.name
+			r.id, r.room_name
 		from
 			rooms r
 		where
 			r.id not in
-		(select rr.room_id from room_reservations rr where $1 < rr.end_date and rr.start_date < $2)
+		(select rr.room_id from room_restrictions rr where $1 < rr.end_date and rr.start_date < $2)
 
 	`
 	rows, err := m.DB.QueryContext(ctx, stmt, start, end)

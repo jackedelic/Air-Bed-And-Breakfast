@@ -57,8 +57,16 @@
     const form = document.getElementById('reservation-dates')
     const formData = new FormData(form)
     formData.append('csrf_token', '{{ .CSRFToken }}')
-    fetch('/receive-json', { method: 'POST', body: formData })
-      .then(res => res.json())
+    fetch('/search-availability', {
+      method: 'POST',
+      body: formData
+    })
+      .then(res => {
+        if (res.redirected) {
+          window.location.href = res.url
+        }
+        res.json()
+      })
       .then(data => console.log(data))
     console.log(start.value)
     console.log(end.value)

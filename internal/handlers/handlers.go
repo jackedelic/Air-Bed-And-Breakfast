@@ -206,6 +206,29 @@ func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) 
 func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Request) {
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
+	sd, err := time.Parse("02-01-2006", start)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	ed, err := time.Parse("02-01-2006", end)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	rooms, err := m.DBRepo.SearchAvailableRoomsByDates(sd, ed)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	for _, r := range rooms {
+		m.App.InfoLog.Println("ROOM:", r.ID, r.RoomName)
+	}
+	// No room available for the given date range
+	if len(rooms) == 0 {
+		m.App.Session.Put(r.Context(), "error", "No availability")
+		http.Redirect(w, r, "/search-availability", http.StatusSeeOther)
+		return
+	}
+
 	w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
 }
 
