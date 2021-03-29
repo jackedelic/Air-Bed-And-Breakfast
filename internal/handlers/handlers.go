@@ -178,7 +178,7 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	m.App.Session.Remove(r.Context(), "reservation")
 }
 
-// GeneralsQuarters handles /generals-quarter
+// GeneralsQuarters handles /generals-quarters
 func (m *Repository) GeneralsQuarters(w http.ResponseWriter, r *http.Request) {
 	stringMap := map[string]string{}
 	render.Template(w, r, "generals-quarters.page.tmpl", &models.TemplateData{
@@ -226,7 +226,7 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	if len(rooms) == 0 {
 		m.App.Session.Put(r.Context(), "error", "No availability")
 		// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
-		http.Redirect(w, r, r.Referer(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, r.Referer(), http.StatusFound)
 		return
 	}
 
