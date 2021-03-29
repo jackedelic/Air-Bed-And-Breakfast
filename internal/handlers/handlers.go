@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jackedelic/bookings/driver"
 	"github.com/jackedelic/bookings/forms"
 	"github.com/jackedelic/bookings/helpers"
@@ -226,7 +227,7 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	if len(rooms) == 0 {
 		m.App.Session.Put(r.Context(), "error", "No availability")
 		// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
-		http.Redirect(w, r, r.Referer(), http.StatusFound)
+		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 		return
 	}
 
@@ -270,4 +271,25 @@ func (m *Repository) ReceiveJSON(w http.ResponseWriter, r *http.Request) {
 	log.Println(string(jByte))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jByte)
+}
+
+// ChooseRoom retrieves reservation value from the session and converts it back to models.Reservation,
+// and appends the choosen roomID (from url param when user click the link).
+func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
+	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // in main.go: gob.Register(models.Reservation{})
+	if !ok {
+		helpers.ServerError(w, err)
+		return
+	}
+	res.RoomID = roomID
+
+	m.App.Session.Put(r.Context(), "reservation", res)
+
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
 }
