@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -62,14 +63,20 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 
 // MakeReservation handles GET /make-reservation
 func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
-	stringMap := map[string]string{}
-	emptyReservation := models.Reservation{}
-	data := make(map[string]interface{})
-	data["reservation"] = emptyReservation
+	// Pull out reservation from session
+	reserv, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	// convert the format of date into the format accepted by html date
+	startDate := reserv.StartDate.Format("2006-01-02")
+	endDate := reserv.EndDate.Format("2006-01-02")
+
+	if !ok {
+		helpers.ServerError(w, errors.New("cannot get reservation from session"))
+		return
+	}
 	render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
-		StringMap: stringMap,
-		Data:      data,
+		Data:      map[string]interface{}{"reservation": reserv},
 		Form:      forms.New(nil),
+		StringMap: map[string]string{"start_date": startDate, "end_date": endDate},
 	})
 }
 
@@ -288,6 +295,13 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res.RoomID = roomID
+
+	// Get room from db and populates models.Reservation
+	room, err := m.DBRepo.GetRoomById(roomID)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	res.Room = room
 
 	m.App.Session.Put(r.Context(), "reservation", res)
 

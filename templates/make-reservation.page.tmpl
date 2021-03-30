@@ -4,10 +4,22 @@
 <div class="container">
   <div class="row py-5">
     <div class="col-6 mx-auto">
-      <h1>Make Reservation</h1>
       {{ $res := index .Data "reservation" }}
+      <h1>Make Reservation</h1>
+      <p>
+        <strong>Reservation Details</strong><br />
+        Room: {{ $res.Room.RoomName }} <br />
+        Arrival: {{index .StringMap "start_date"}} <br />
+        Departure: {{index .StringMap "end_date"}}
+      </p>
+
       <form action="/make-reservation?k=v" method="POST" class="" novalidate>
         <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+        <input type="hidden" name="room_id" value="{{ $res.RoomID }}" />
+        <input required name="start_date" type="hidden" class="form-control"
+        value="{{index .StringMap "start_date"}}" /> <input required
+        name="end_date" type="hidden" class="form-control" value="{{index .StringMap "end_date"
+        }}" />
         <div class="mb-3">
           <label for="email" class="form-label">Email address</label>
           {{with .Form.Errors.Get "email"}}
@@ -46,32 +58,6 @@
           <div class="valid-feedback">Looks good!</div>
           <div class="invalid-feedback">Kindly enter your last name</div>
         </div>
-
-        <div class="mb-3">
-          <label for="start_date" class="form-label">Start Date</label>
-          {{ with .Form.Errors.Get "start_date"}}
-          <label for="start_date" class="text-danger">{{.}}</label>
-          {{ end }}
-          <input required name="start_date" type="text" class="form-control
-          {{with .Form.Errors.Get "end_date"}}is-invalid{{ end }}"
-          id="start_date" value="{{ $res.StartDate }}" />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Kindly enter your start date</div>
-        </div>
-
-        <div class="mb-3">
-          <label for="end_date" class="form-label">Start Date</label>
-          {{ with .Form.Errors.Get "end_date"}}
-          <label for="end_date" class="text-danger">{{.}}</label>
-          {{ end }}
-          <input required name="end_date" type="text" class="form-control
-          {{with .Form.Errors.Get "end_date"}}is-invalid{{ end }}" id="end_date"
-          value="{{ $res.EndDate }}" />
-          <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Kindly enter your start date</div>
-        </div>
-
-        <input type="hidden" name="room_id" value="1" />
 
         <button type="submit" class="btn btn-primary">Make Reservation</button>
       </form>
