@@ -40,6 +40,8 @@ func main() {
 		Addr:    portNumber,
 		Handler: routes(&app),
 	}
+
+	app.InfoLog.Println(fmt.Sprintf("Server listening at port %s", portNumber))
 	err = srv.ListenAndServe()
 	log.Fatal(err)
 }
