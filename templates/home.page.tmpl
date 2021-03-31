@@ -86,10 +86,49 @@
 </div>
 <div class="row">
   <div class="col text-center">
-    <a href="/search-availability" class="btn btn-success"
-      >Make Reservation Now</a
-    >
+    <a id="search-availability" class="btn btn-success">Make Reservation Now</a>
   </div>
 </div>
 <div class="container"></div>
+{{ end }}
+{{ define "js" }}
+<script>
+  const htmlInput = `
+            <form method="POST" action="/search-availability" id="reservation-dates">
+                <div class="row">
+                  <div class="col">
+                    <div class="mb-3">
+                      <input
+                        required
+                        class="form-control"
+                        name="start"
+                        aria-describedby="dateHelp"
+                        placeholder="Arrival date"
+                      />
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="mb-3">
+                      <input
+                        required
+                        class="form-control"
+                        name="end"
+                        aria-describedby="dateHelp"
+                        placeholder="Departure date"
+                      />
+                    </div>
+                  </div>
+                  <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+                </div>
+              </form>
+            `
+  async function callback(value) {
+    document.forms['reservation-dates'].submit()
+  }
+  document
+    .getElementById('search-availability')
+    .addEventListener('click', () => {
+      customAlertHtml({ title: 'Pick a date range', htmlInput, cb: callback })
+    })
+</script>
 {{ end }}

@@ -52,10 +52,40 @@
               </form>
             `
   async function callback(value) {
-    document.forms['reservation-dates'].submit()
-    console.log(start.value)
-    console.log(end.value)
-    console.log('value: ', value)
+    let form = document.getElementById('reservation-dates')
+    let formData = new FormData(form)
+    formData.append('room_id', '2')
+    fetch('/search-availability-json', {
+      method: 'POST',
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log(data)
+        if (data.ok) {
+          // room of id = 2 is available
+          Swal.fire({
+            title: "Major's Suite is available!",
+            icon: 'success',
+            html:
+              `<a href="/book-room?id=${data.room_id}&s=${data.start_date}&e=${data.end_date}"` +
+              'class="mt-2 btn btn-primary">Book Now</a> ',
+            showConfirmButton: false,
+            showCloseButton: false,
+            showCancelButton: false,
+            focusConfirm: false
+          })
+        } else {
+          Swal.fire({
+            title: "Major's Suite is not available for these dates!",
+            icon: 'error',
+            showConfirmButton: true,
+            showCloseButton: false,
+            showCancelButton: false,
+            focusConfirm: false
+          })
+        }
+      })
   }
   document
     .getElementById('search-availability')

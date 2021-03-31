@@ -29,6 +29,14 @@ type Repository struct {
 	DBRepo repository.DatabaseRepo
 }
 
+type JSONResponse struct {
+	Ok        bool   `json:"ok"`
+	Message   string `json:"message"`
+	RoomID    string `json:"room_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+}
+
 // NewRepo creates a pointer to a Repository using AppConfig passed to the function.
 func NewRepo(appConfig *config.AppConfig, db driver.DB) *Repository {
 	repo := Repository{
@@ -195,16 +203,51 @@ func (m *Repository) MajorsSuite(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SearchAvailability handles /search-availability
-func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
-	stringMap := map[string]string{}
-	render.Template(w, r, "search-availability.page.tmpl", &models.TemplateData{
-		StringMap: stringMap,
-	})
+// SearchAvailabilityJSON handles POST /search-availability-json
+func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Request) {
+	// Retrieves start date and end date from the form
+	start := r.Form.Get("start")
+	end := r.Form.Get("end")
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	sd, err := time.Parse("02-01-2006", start)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	ed, err := time.Parse("02-01-2006", end)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	// Find if any available rooms from our database
+	available, err := m.DBRepo.SearchAvailabilityByDatesByRoomID(sd, ed, roomID)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	m.App.InfoLog.Println(available)
+
+	jr := JSONResponse{
+		Ok:        available,
+		Message:   "You are in /search-available-json",
+		RoomID:    strconv.Itoa(roomID),
+		StartDate: start,
+		EndDate:   end,
+	}
+	jByte, err := json.MarshalIndent(jr, "", "    ")
+	if err != nil {
+		helpers.ServerError(w, err)
+		w.Write([]byte("Got error marshalling the json response"))
+	}
+	log.Println(string(jByte))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jByte)
 }
 
 // PostSearchAvailability handles POST /search-availability
 func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Request) {
+	// Retrieve start date and end date from the form
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
 	sd, err := time.Parse("02-01-2006", start)
@@ -215,6 +258,8 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		helpers.ServerError(w, err)
 	}
+
+	// Get all available rooms from db for the given start and end dates.
 	rooms, err := m.DBRepo.SearchAvailableRoomsByDates(sd, ed)
 	if err != nil {
 		helpers.ServerError(w, err)
@@ -223,14 +268,14 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	for _, r := range rooms {
 		m.App.InfoLog.Println("ROOM:", r.ID, r.RoomName)
 	}
-	// No room available for the given date range
+	// If no room available for the given date range
 	if len(rooms) == 0 {
 		m.App.Session.Put(r.Context(), "error", "No availability")
 		// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 		return
 	}
-
+	// If any room available, save it into a models.TemplateData object.
 	// For use in template data
 	data := make(map[string]interface{})
 	data["rooms"] = rooms

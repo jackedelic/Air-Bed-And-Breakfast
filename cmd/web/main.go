@@ -68,7 +68,7 @@ func run() error {
 
 	templateCache, err := render.CreateTemplateCache()
 	if err != nil {
-		log.Fatal("Error creating template cache")
+		log.Fatal("Error creating template cache", err)
 		return err
 	}
 
