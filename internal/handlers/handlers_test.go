@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/jackedelic/bookings/internal/models"
 )
 
 // postData holds the key-value pairs of form inputs (name-value pairs)
@@ -46,7 +49,7 @@ var theTests = []struct {
 	}, http.StatusOK},
 }
 
-func TestHandlers(t *testing.T) {
+func aTestHandlers(t *testing.T) {
 	routes := getRoutes()
 	server := httptest.NewTLSServer(routes)
 	defer server.Close()
@@ -81,4 +84,36 @@ func TestHandlers(t *testing.T) {
 			}
 		}
 	}
+}
+
+// Create models.Reservation and a new session (stored in context.Context).
+// Then puts the reservation into the session (remember the session is inside the context).
+// Then puts the context (containing the session) into the request (created using http.NewRequest())
+func TestRepository_Reservation(t *testing.T) {
+	reservation := models.Reservation{
+		RoomID: 1,
+		Room: models.Room{
+			ID: 1, RoomName: "General's Quarter",
+		},
+	}
+	req, _ := http.NewRequest("GET", "/make-reservation", nil)
+	ctx := getCtx(req)         // context containing the session
+	req = req.WithContext(ctx) // request containing this context containing the session.
+
+	resRecorder := httptest.NewRecorder()
+	session.Put(ctx, "reservation", reservation) // If middleware uses session, then the server will remember the session token (in ctx)
+
+	handler := http.HandlerFunc(Repo.MakeReservation) // notice we don need getRoutes. Here we're building our handler ourselves
+	handler.ServeHTTP(resRecorder, req)
+	if resRecorder.Code != http.StatusOK {
+		t.Errorf("Reservation handler returned wrong response code: got %d, wanted %d", resRecorder.Code, http.StatusOK)
+	}
+}
+
+func getCtx(req *http.Request) context.Context {
+	ctx, err := session.Load(req.Context(), req.Header.Get("X-Session"))
+	if err != nil {
+		Repo.App.ErrorLog.Println(err)
+	}
+	return ctx
 }

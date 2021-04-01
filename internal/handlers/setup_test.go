@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -25,7 +26,7 @@ var pathToTemplates = "../../templates"
 var session *scs.SessionManager
 var app config.AppConfig
 
-func getRoutes() http.Handler {
+func TestMain(m *testing.M) {
 	gob.Register(models.Reservation{})
 
 	// setup loggers for app config
@@ -54,7 +55,10 @@ func getRoutes() http.Handler {
 	repo := NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
 	NewHandlers(repo)                  // assign this newly created repo to Repo
 	render.NewRenderer(&app)
+	os.Exit(m.Run())
+}
 
+func getRoutes() http.Handler {
 	mux := chi.NewMux()
 	mux.Use(middleware.Recoverer)
 	// mux.Use(NoSurf)
