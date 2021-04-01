@@ -46,6 +46,15 @@ func NewRepo(appConfig *config.AppConfig, db driver.DB) *Repository {
 	return &repo
 }
 
+// NewTestingRepo creates a pointer to a testingDBRepo using AppConfig.
+func NewTestingRepo(appConfig *config.AppConfig) *Repository {
+	repo := Repository{
+		App:    appConfig,
+		DBRepo: dbrepo.NewTestingRepo(appConfig),
+	}
+	return &repo
+}
+
 // NewHandlers assigns the input repo to handlers.Repo
 func NewHandlers(repo *Repository) {
 	Repo = repo
