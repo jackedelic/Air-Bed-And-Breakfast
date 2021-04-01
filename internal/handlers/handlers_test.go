@@ -27,13 +27,17 @@ var theTests = []struct {
 	{"generals quarters page", "/generals-quarters", "GET", []postData{}, http.StatusOK},
 	{"majors suite page", "/majors-suite", "GET", []postData{}, http.StatusOK},
 	{"contact page", "/contact", "GET", []postData{}, http.StatusOK},
-	{"search availability page", "/search-availability", "GET", []postData{}, http.StatusOK},
+	{"search availability json", "/search-availability-json", "POST", []postData{
+		{key: "start", value: "31-01-2021"},
+		{key: "end", value: "01-02-2021"},
+		{key: "room_id", value: "1"},
+	}, http.StatusOK},
 	{"make reservation", "/make-reservation", "POST", []postData{
 		{key: "first_name", value: "Jack"},
 		{key: "last_name", value: "Wong"},
 		{key: "email", value: "jackwong3101@yahoo.com"},
 	}, http.StatusOK},
-	{"search availability", "/search-availability", "POST", []postData{
+	{"search available rooms", "/search-availability", "POST", []postData{
 		{key: "start", value: "31-01-2021"},
 		{key: "end", value: "01-02-2021"},
 	}, http.StatusOK},
@@ -58,7 +62,7 @@ func TestHandlers(t *testing.T) {
 			}
 
 			if resp.StatusCode != test.expectedStatusCode {
-				t.Errorf("for %s, expected %d but got %d", test.name, test.expectedStatusCode, resp.StatusCode)
+				t.Errorf("for %s: %s, expected %d but got %d", test.method, test.name, test.expectedStatusCode, resp.StatusCode)
 			}
 		case "POST":
 			var formData = url.Values{}
@@ -73,7 +77,7 @@ func TestHandlers(t *testing.T) {
 			}
 
 			if resp.StatusCode != test.expectedStatusCode {
-				t.Errorf("for %s, expected %d but got %d", test.name, test.expectedStatusCode, resp.StatusCode)
+				t.Errorf("for %s: %s, expected %d but got %d", test.method, test.name, test.expectedStatusCode, resp.StatusCode)
 			}
 		}
 	}

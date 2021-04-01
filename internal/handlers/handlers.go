@@ -101,6 +101,7 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		m.App.ErrorLog.Println("Error parsing form")
 		helpers.ServerError(w, err)
 		return
 	}
@@ -214,24 +215,34 @@ func (m *Repository) MajorsSuite(w http.ResponseWriter, r *http.Request) {
 
 // SearchAvailabilityJSON handles POST /search-availability-json
 func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.ErrorLog.Println("Error parsing form")
+		helpers.ServerError(w, err)
+		return
+	}
 	// Retrieves start date and end date from the form
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
+		m.App.ErrorLog.Println("Error retrieving room id from form")
 		helpers.ServerError(w, err)
 	}
 	sd, err := time.Parse("02-01-2006", start)
 	if err != nil {
+		m.App.ErrorLog.Println("Error retrieving start date from form")
 		helpers.ServerError(w, err)
 	}
 	ed, err := time.Parse("02-01-2006", end)
 	if err != nil {
+		m.App.ErrorLog.Println("Error retrieving end date from form")
 		helpers.ServerError(w, err)
 	}
 	// Find if any available rooms from our database
 	available, err := m.DBRepo.SearchAvailabilityByDatesByRoomID(sd, ed, roomID)
 	if err != nil {
+		m.App.ErrorLog.Println("Error searching availability by dates by room id")
 		helpers.ServerError(w, err)
 	}
 
@@ -254,8 +265,15 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 	w.Write(jByte)
 }
 
-// PostSearchAvailability handles POST /search-availability
+// PostSearchAvailability handles POST /search-availability and look for available rooms/
+// If rooms available, it puts them in template data and renders the template it to client.
 func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.ErrorLog.Println("Error parsing form")
+		helpers.ServerError(w, err)
+		return
+	}
 	// Retrieve start date and end date from the form
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
