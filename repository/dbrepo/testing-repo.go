@@ -1,6 +1,7 @@
 package dbrepo
 
 import (
+	"errors"
 	"time"
 
 	"github.com/jackedelic/bookings/internal/models"
@@ -10,11 +11,19 @@ func (m *testingDBRepo) AllUsers() bool {
 	return true
 }
 
+// InsertReservation returns 0 and error if rr.RoomID == 2
 func (m *testingDBRepo) InsertReservation(res models.Reservation) (int, error) {
+	if res.RoomID == 2 {
+		return 0, errors.New("error inserting reservation with room id of 2")
+	}
 	return 1, nil
 }
 
+// InsertRoomRestriction returns error if rr.RoomID == 1000
 func (m *testingDBRepo) InsertRoomRestriction(rr models.RoomRestriction) error {
+	if rr.RoomID == 1000 {
+		return errors.New("error inserting room restriction with room id of 1000")
+	}
 	return nil
 }
 
@@ -27,7 +36,11 @@ func (m *testingDBRepo) SearchAvailableRoomsByDates(start, end time.Time) ([]mod
 	return rooms, nil
 }
 
+// GetRoomById returns empty room with an error for room id > 2, otherwise nil.
 func (m *testingDBRepo) GetRoomById(id int) (models.Room, error) {
 	var room models.Room
+	if room.ID > 2 {
+		return room, errors.New("no room with id > 2")
+	}
 	return room, nil
 }

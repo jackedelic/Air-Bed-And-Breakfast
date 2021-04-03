@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -83,7 +82,9 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 	// Pull out reservation from session
 	reserv, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		helpers.ServerError(w, errors.New("cannot get reservation from session"))
+		m.App.ErrorLog.Println("Error retrieving reservation from session")
+		m.App.Session.Put(r.Context(), "error", "error getting reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	// convert the format of date into the format accepted by html date
@@ -102,25 +103,38 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		m.App.ErrorLog.Println("Error parsing form")
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "error parsing form")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println("Error converting room_id to integer")
+		m.App.Session.Put(r.Context(), "error", "error processing room_id")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	// Pull reservation (partially filled with start,end dates) from session
-	reservation := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // RoomID could be populated already
+	// Check type
+	resType := fmt.Sprintf("%T", reservation)
+	fmt.Println(resType)
+	if !ok {
+		m.App.ErrorLog.Println("Error retrieving reservation from session")
+		m.App.Session.Put(r.Context(), "error", "error getting reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 	reservation.FirstName = r.Form.Get("first_name")
 	reservation.LastName = r.Form.Get("last_name")
 	reservation.Email = r.Form.Get("email")
+	reservation.RoomID = roomID // This may be unnecessary since it may be in the session already
 
 	form := forms.New(r.PostForm)
-	log.Println(r.PostForm)
-	log.Println(r.Form)
+	// log.Println(r.PostForm)
+	// log.Println(r.Form)
 
 	form.Required("email", "first_name", "last_name")
 	form.MinLength("first_name", 3)
@@ -129,16 +143,20 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := make(map[string]interface{})
 		data["reservation"] = reservation
+
+		w.WriteHeader(http.StatusTemporaryRedirect)
+
 		render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
 			Form: form,
 			Data: data,
 		})
 		return
 	}
-
 	newReservationID, err := m.DBRepo.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println("Error inserting reservation to the database")
+		m.App.Session.Put(r.Context(), "error", "server error inserting reservation the database")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -153,7 +171,9 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	err = m.DBRepo.InsertRoomRestriction(roomRestriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println("Error inserting room_restriction to the database")
+		m.App.Session.Put(r.Context(), "error", "server error inserting room restriction to the database")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -226,24 +246,28 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 	end := r.Form.Get("end")
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
-		m.App.ErrorLog.Println("Error retrieving room id from form")
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println("Error converting room_id to integer")
+		m.App.Session.Put(r.Context(), "error", "error processing room_id")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
 	sd, err := time.Parse("02-01-2006", start)
 	if err != nil {
-		m.App.ErrorLog.Println("Error retrieving start date from form")
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println("Error retrieving start_date from form")
+		m.App.Session.Put(r.Context(), "error", "error retrieving start_date from form")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
 	ed, err := time.Parse("02-01-2006", end)
 	if err != nil {
-		m.App.ErrorLog.Println("Error retrieving end date from form")
+		m.App.ErrorLog.Println("Error parsing end_date from form")
+		m.App.Session.Put(r.Context(), "error", "error parsing end_date from form")
 		helpers.ServerError(w, err)
 	}
 	// Find if any available rooms from our database
 	available, err := m.DBRepo.SearchAvailabilityByDatesByRoomID(sd, ed, roomID)
 	if err != nil {
 		m.App.ErrorLog.Println("Error searching availability by dates by room id")
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "error querying the database")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
 
 	m.App.InfoLog.Println(available)
@@ -257,10 +281,10 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 	}
 	jByte, err := json.MarshalIndent(jr, "", "    ")
 	if err != nil {
-		helpers.ServerError(w, err)
-		w.Write([]byte("Got error marshalling the json response"))
+		m.App.ErrorLog.Println("Error marshalling JSONResponse object")
+		m.App.Session.Put(r.Context(), "error", "server error constructing json response")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
-	log.Println(string(jByte))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jByte)
 }
