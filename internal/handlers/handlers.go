@@ -238,7 +238,13 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 	err := r.ParseForm()
 	if err != nil {
 		m.App.ErrorLog.Println("Error parsing form")
-		helpers.ServerError(w, err)
+		resp := JSONResponse{
+			Ok:      false,
+			Message: "Internal server error parsing form",
+		}
+		out, _ := json.MarshalIndent(resp, "", "		")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 	// Retrieves start date and end date from the form
@@ -247,27 +253,51 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
 		m.App.ErrorLog.Println("Error converting room_id to integer")
-		m.App.Session.Put(r.Context(), "error", "error processing room_id")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		resp := JSONResponse{
+			Ok:      false,
+			Message: "Internal server error processing room_id",
+		}
+		out, _ := json.MarshalIndent(resp, "", "		")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
 	}
 	sd, err := time.Parse("02-01-2006", start)
 	if err != nil {
 		m.App.ErrorLog.Println("Error retrieving start_date from form")
-		m.App.Session.Put(r.Context(), "error", "error retrieving start_date from form")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		resp := JSONResponse{
+			Ok:      false,
+			Message: "Internal server error retrieving start_date from form",
+		}
+		out, _ := json.MarshalIndent(resp, "", "		")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
 	}
 	ed, err := time.Parse("02-01-2006", end)
 	if err != nil {
 		m.App.ErrorLog.Println("Error parsing end_date from form")
-		m.App.Session.Put(r.Context(), "error", "error parsing end_date from form")
-		helpers.ServerError(w, err)
+		resp := JSONResponse{
+			Ok:      false,
+			Message: "Internal server error parsing end_date from form",
+		}
+		out, _ := json.MarshalIndent(resp, "", "		")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
 	}
 	// Find if any available rooms from our database
 	available, err := m.DBRepo.SearchAvailabilityByDatesByRoomID(sd, ed, roomID)
 	if err != nil {
 		m.App.ErrorLog.Println("Error searching availability by dates by room id")
-		m.App.Session.Put(r.Context(), "error", "error querying the database")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		resp := JSONResponse{
+			Ok:      false,
+			Message: "Internal server error searching availability by dates by room id",
+		}
+		out, _ := json.MarshalIndent(resp, "", "		")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
 	}
 
 	m.App.InfoLog.Println(available)
@@ -279,12 +309,7 @@ func (m *Repository) SearchAvailabilityJSON(w http.ResponseWriter, r *http.Reque
 		StartDate: start,
 		EndDate:   end,
 	}
-	jByte, err := json.MarshalIndent(jr, "", "    ")
-	if err != nil {
-		m.App.ErrorLog.Println("Error marshalling JSONResponse object")
-		m.App.Session.Put(r.Context(), "error", "server error constructing json response")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	}
+	jByte, _ := json.MarshalIndent(jr, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jByte)
 }

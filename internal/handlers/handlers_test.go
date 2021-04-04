@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -246,6 +247,92 @@ func TestRepository_PostReservation(t *testing.T) {
 			t.Errorf("Test description: %s \nPostReservation handlers returned the wrong response code: got %d, wanted %d", testData[i].description, resRecorder.Code, testData[i].expectedStatusCode)
 		}
 	}
+}
+
+func TestRepository_SearchAvailabilityJSON(t *testing.T) {
+	var (
+		ctx         context.Context
+		req         *http.Request
+		resRecorder *httptest.ResponseRecorder
+		handler     http.HandlerFunc
+	)
+	testData := []struct {
+		description          string
+		body                 string
+		expectedJSONResponse JSONResponse
+	}{
+		{
+			description:          "empty form body",
+			body:                 "",
+			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error parsing form"},
+		},
+		{
+			description:          "room_id is not an integer",
+			body:                 "start=01-01-2050&end=01-01-2050&room_id=invalid",
+			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error processing room_id"},
+		},
+		{
+			description:          "missing start_date in the form",
+			body:                 "end=01-01-2050&room_id=1",
+			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error retrieving start_date from form"},
+		},
+		{
+			description:          "missing end_date in the form",
+			body:                 "start=01-01-2050&room_id=1",
+			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error parsing end_date from form"},
+		},
+		{
+			description:          "error SearchAvailabilityByDatesByRoomID",
+			body:                 "start=01-01-2050&end=01-01-2050&room_id=1",
+			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error searching availability by dates by room id"},
+		},
+	}
+
+	for i := 0; i < len(testData); i++ {
+		// Create request
+		if testData[i].body == "" {
+			req, _ = http.NewRequest("POST", "/search-availability-json", nil)
+		} else {
+			req, _ = http.NewRequest("POST", "/search-availability-json", strings.NewReader(testData[i].body))
+		}
+
+		// Set request header on content-type
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		// Create context with session in the request
+		ctx = getCtx(req)
+
+		// Put the context with session into the request
+		req = req.WithContext(ctx)
+
+		// Make ResponseRecorder
+		resRecorder = httptest.NewRecorder()
+
+		// Create SearchAvailabilityJSON handler
+		handler = http.HandlerFunc(Repo.SearchAvailabilityJSON)
+
+		// Makes request to out handler
+		handler.ServeHTTP(resRecorder, req)
+
+		// Receives response and processes the bytes into JSONResponse struct
+		var jsonResponse JSONResponse
+		err := json.Unmarshal(resRecorder.Body.Bytes(), &jsonResponse)
+		if err != nil {
+			t.Error("failed to parse json")
+		}
+		desc := testData[i].description
+		expectedOk := testData[i].expectedJSONResponse.Ok
+		expectedMsg := testData[i].expectedJSONResponse.Message
+		if jsonResponse.Ok != expectedOk {
+			t.Errorf("Test description: %s \nThe json response had the wrong Ok value: got: %t, wanted: %t",
+				desc, jsonResponse.Ok, expectedOk)
+		}
+		if jsonResponse.Message != expectedMsg {
+			t.Errorf("Test description: %s \nThe json response had the wrong Message value: got %s, wanted %s",
+				desc, jsonResponse.Message, expectedMsg)
+		}
+	}
+
 }
 
 // Gets the X-Session from request header and load into a context.Context object.

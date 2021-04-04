@@ -27,7 +27,12 @@ func (m *testingDBRepo) InsertRoomRestriction(rr models.RoomRestriction) error {
 	return nil
 }
 
+// SearchAvailabilityByDatesByRoomID returns false and error for room id of 1 and dates 01-01-2050 to 01-01-2050
 func (m *testingDBRepo) SearchAvailabilityByDatesByRoomID(start, end time.Time, roomID int) (bool, error) {
+	if (start.Format("02-01-2006") == "01-01-2050" || end.Format("02-01-2006") == "01-01-2050") &&
+		roomID == 1 {
+		return false, errors.New("rooms not available")
+	}
 	return false, nil
 }
 
