@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // Users represents the users table
 type User struct {
@@ -57,4 +59,12 @@ type RoomRestriction struct {
 	Room          Room        // Optional
 	Reservation   Reservation // Optional
 	Restriction   Restriction // Optional
+}
+
+// MailData represents the email message when sending email
+type MailData struct {
+	To      string
+	From    string
+	Subject string
+	Content string
 }

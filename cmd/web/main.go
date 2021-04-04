@@ -28,6 +28,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer close(app.MailChan)
+
+	listenForMail()
 
 	db, err := connectDB()
 	if err != nil {
@@ -53,6 +56,18 @@ func run() error {
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
 	gob.Register(models.RoomRestriction{})
+
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+
+	msg := models.MailData{
+		To:      "jackwong3101@yahoo.com",
+		From:    "me@here.com",
+		Subject: "Some subject",
+		Content: "",
+	}
+	app.MailChan <- msg
+
 	app.InProduction = false // Change this to true when in production
 	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.ErrorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)

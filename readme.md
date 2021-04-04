@@ -7,3 +7,4 @@ This is the repository for my bookings and reservations project
 - Uses [session management](github.com/justinas/nosurf)
 - Uses [CSRF](github.com/justinas/nosurf)
 - Uses [Fizz](https://gobuffalo.io/en/docs/db/fizz/) for database migration
+- Uses [go-simple-mail](github.com/xhit/go-simple-mail/v2) for sending confirmation emails upon reservation
