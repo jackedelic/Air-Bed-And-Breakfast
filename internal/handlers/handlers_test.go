@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -31,23 +32,6 @@ var theTests = []struct {
 	{"generals quarters page", "/generals-quarters", "GET", http.StatusOK},
 	{"majors suite page", "/majors-suite", "GET", http.StatusOK},
 	{"contact page", "/contact", "GET", http.StatusOK},
-	// {"search availability json", "/search-availability-json", "POST", []postData{
-	// 	{key: "start", value: "31-01-2021"},
-	// 	{key: "end", value: "01-02-2021"},
-	// 	{key: "room_id", value: "1"},
-	// }, http.StatusOK},
-	// {"make reservation", "/make-reservation", "POST", []postData{
-	// 	{key: "first_name", value: "Jack"},
-	// 	{key: "last_name", value: "Wong"},
-	// 	{key: "email", value: "jackwong3101@yahoo.com"},
-	// }, http.StatusOK},
-	// {"search available rooms", "/search-availability", "POST", []postData{
-	// 	{key: "start", value: "31-01-2021"},
-	// 	{key: "end", value: "01-02-2021"},
-	// }, http.StatusOK},
-	// {"receive json", "/receive-json", "POST", []postData{
-	// 	{key: "", value: ""},
-	// }, http.StatusOK},
 }
 
 func aTestHandlers(t *testing.T) {
@@ -57,32 +41,14 @@ func aTestHandlers(t *testing.T) {
 
 	for _, test := range theTests {
 		client := server.Client()
-		switch test.method {
-		case "GET":
-			resp, err := client.Get(server.URL + test.urlPath)
-			if err != nil {
-				t.Log(err)
-				t.Error(err)
-			}
+		resp, err := client.Get(server.URL + test.urlPath)
+		if err != nil {
+			t.Log(err)
+			t.Error(err)
+		}
 
-			if resp.StatusCode != test.expectedStatusCode {
-				t.Errorf("for %s: %s, expected %d but got %d", test.method, test.name, test.expectedStatusCode, resp.StatusCode)
-			}
-			// case "POST":
-			// 	var formData = url.Values{}
-			// 	for _, pData := range test.params {
-			// 		formData.Add(pData.key, pData.value)
-			// 	}
-
-			// 	resp, err := client.PostForm(server.URL+test.urlPath, formData)
-			// 	if err != nil {
-			// 		t.Log(err)
-			// 		t.Error(err)
-			// 	}
-
-			// 	if resp.StatusCode != test.expectedStatusCode {
-			// 		t.Errorf("for %s: %s, expected %d but got %d", test.method, test.name, test.expectedStatusCode, resp.StatusCode)
-			// 	}
+		if resp.StatusCode != test.expectedStatusCode {
+			t.Errorf("for %s: %s, expected %d but got %d", test.method, test.name, test.expectedStatusCode, resp.StatusCode)
 		}
 	}
 }
@@ -146,15 +112,18 @@ func TestRepository_PostReservation(t *testing.T) {
 	)
 	var testData = []struct {
 		description        string
-		body               string
+		body               map[string][]string
 		reservation        interface{} // allows for nil
 		expectedStatusCode int
 	}{
 		// Test for valid post data
 		{
 			description: "Test for valid post data",
-			body: "first_name=Jordan" + "&" + "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=1",
+			body: map[string][]string{
+				"first_name": {"Jordan"},
+				"last_name":  {"Peele"},
+				"email":      {"jordan@comedycentral.com"},
+				"room_id":    {"1"}},
 			reservation: models.Reservation{
 				StartDate: time.Now(),
 				EndDate:   time.Now(),
@@ -164,23 +133,29 @@ func TestRepository_PostReservation(t *testing.T) {
 		// Test for missing body
 		{
 			description:        "Test for missing body",
-			body:               "",
+			body:               map[string][]string{},
 			reservation:        models.Reservation{},
 			expectedStatusCode: http.StatusTemporaryRedirect,
 		},
 		// Test for missing Reservation in the session
 		{
 			description: "Test for missing Reservation in the session",
-			body: "first_name=Jordan" + "&" + "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=1",
+			body: map[string][]string{
+				"first_name": {"Jordan"},
+				"last_name":  {"Peele"},
+				"email":      {"jordan@comedycentral.com"},
+				"room_id":    {"1"}},
 			reservation:        nil,
 			expectedStatusCode: http.StatusTemporaryRedirect,
 		},
 		// Test for room_id not being integer
 		{
 			description: "Test for room_id not being integer",
-			body: "first_name=Jordan" + "&" + "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=notinteger",
+			body: map[string][]string{
+				"first_name": {"Jordan"},
+				"last_name":  {"Peele"},
+				"email":      {"jordan@comedycentral.com"},
+				"room_id":    {"notinteger"}},
 			reservation: models.Reservation{
 				StartDate: time.Now(),
 				EndDate:   time.Now(),
@@ -190,8 +165,10 @@ func TestRepository_PostReservation(t *testing.T) {
 		// Test for invalid form (first_name required)
 		{
 			description: "Test for invalid form (first_name required)",
-			body: "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=1",
+			body: map[string][]string{
+				"last_name": {"Peele"},
+				"email":     {"jordan@comedycentral.com"},
+				"room_id":   {"1"}},
 			reservation: models.Reservation{
 				StartDate: time.Now(),
 				EndDate:   time.Now(),
@@ -202,8 +179,11 @@ func TestRepository_PostReservation(t *testing.T) {
 		// Repo.InsertReservation returns error for room_id of 2
 		{
 			description: "Test for error inserting into reservation table",
-			body: "first_name=Jordan" + "&" + "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=2",
+			body: map[string][]string{
+				"first_name": {"Jordan"},
+				"last_name":  {"Peele"},
+				"email":      {"jordan@comedycentral.com"},
+				"room_id":    {"2"}},
 			reservation: models.Reservation{
 				StartDate: time.Now(),
 				EndDate:   time.Now(),
@@ -214,8 +194,11 @@ func TestRepository_PostReservation(t *testing.T) {
 		// Repo.InsertRoomRestriction returns error for room_id of 1000
 		{
 			description: "Test for error inserting into room_restrictions table",
-			body: "first_name=Jack" + "&" + "last_name=Peele" + "&" +
-				"email=jordan@comedycentral.com" + "&" + "room_id=1000",
+			body: map[string][]string{
+				"first_name": {"Jack"},
+				"last_name":  {"Peele"},
+				"email":      {"jordan@comedycentral.com"},
+				"room_id":    {"1000"}},
 			reservation: models.Reservation{
 				StartDate: time.Now(),
 				EndDate:   time.Now(),
@@ -226,10 +209,12 @@ func TestRepository_PostReservation(t *testing.T) {
 
 	// Start testing each test data
 	for i := 0; i < len(testData); i++ {
-		if testData[i].body == "" {
+		// Create url encoded form string
+		formString := url.Values(testData[i].body).Encode()
+		if len(testData[i].body) == 0 {
 			req, _ = http.NewRequest("POST", "/make-reservation", nil) // no session yet
 		} else {
-			req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(testData[i].body)) // no session yet
+			req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(formString)) // no session yet
 		}
 
 		ctx = getCtx(req)          // get X-Session token and create a context with the session token
@@ -258,42 +243,54 @@ func TestRepository_SearchAvailabilityJSON(t *testing.T) {
 	)
 	testData := []struct {
 		description          string
-		body                 string
+		body                 map[string][]string
 		expectedJSONResponse JSONResponse
 	}{
 		{
 			description:          "empty form body",
-			body:                 "",
+			body:                 map[string][]string{},
 			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error parsing form"},
 		},
 		{
-			description:          "room_id is not an integer",
-			body:                 "start=01-01-2050&end=01-01-2050&room_id=invalid",
+			description: "room_id is not an integer",
+			body: map[string][]string{
+				"start":   {"01-01-2050"},
+				"end":     {"01-01-2050"},
+				"room_id": {"invalid"}},
 			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error processing room_id"},
 		},
 		{
-			description:          "missing start_date in the form",
-			body:                 "end=01-01-2050&room_id=1",
+			description: "missing start_date in the form",
+			body: map[string][]string{
+				"end":     {"01-01-2050"},
+				"room_id": {"1"}},
 			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error retrieving start_date from form"},
 		},
 		{
-			description:          "missing end_date in the form",
-			body:                 "start=01-01-2050&room_id=1",
+			description: "missing end_date in the form",
+			body: map[string][]string{
+				"start":   {"01-01-2050"},
+				"room_id": {"1"}},
 			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error parsing end_date from form"},
 		},
 		{
-			description:          "error SearchAvailabilityByDatesByRoomID",
-			body:                 "start=01-01-2050&end=01-01-2050&room_id=1",
+			description: "error SearchAvailabilityByDatesByRoomID",
+			body: map[string][]string{
+				"start":   {"01-01-2050"},
+				"end":     {"01-01-2050"},
+				"room_id": {"1"}},
 			expectedJSONResponse: JSONResponse{Ok: false, Message: "Internal server error searching availability by dates by room id"},
 		},
 	}
 
 	for i := 0; i < len(testData); i++ {
+		// Encode body
+		formString := url.Values(testData[i].body).Encode()
 		// Create request
-		if testData[i].body == "" {
+		if len(testData[i].body) == 0 {
 			req, _ = http.NewRequest("POST", "/search-availability-json", nil)
 		} else {
-			req, _ = http.NewRequest("POST", "/search-availability-json", strings.NewReader(testData[i].body))
+			req, _ = http.NewRequest("POST", "/search-availability-json", strings.NewReader(formString))
 		}
 
 		// Set request header on content-type
@@ -332,7 +329,6 @@ func TestRepository_SearchAvailabilityJSON(t *testing.T) {
 				desc, jsonResponse.Message, expectedMsg)
 		}
 	}
-
 }
 
 // Gets the X-Session from request header and load into a context.Context object.
