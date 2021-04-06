@@ -177,6 +177,41 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send email notification to customer
+	htmlMsg := fmt.Sprintf(`
+			<strong>Reservation Confirmation</strong><br>
+			Dear %s, <br>
+			This is to confirm your reservation from %s to %s
+		`,
+		reservation.FirstName,
+		reservation.StartDate.Format("02-01-2006"),
+		reservation.EndDate.Format("02-01-2006"))
+
+	msg := models.MailData{
+		To:       reservation.Email,
+		From:     "jackwong@airbnbdestroyer.com",
+		Subject:  "Reservation confirmation",
+		Content:  htmlMsg,
+		Template: "basic.html",
+	}
+	m.App.MailChan <- msg
+	// Send email to property owner
+	htmlMsg = fmt.Sprintf(`
+			<strong>Reservation Notification</strong>
+			A reservation has been made for %s from %s to %s.
+		`,
+		reservation.Email,
+		reservation.StartDate.Format("02-01-2006"),
+		reservation.EndDate.Format("02-01-2006"))
+	msg = models.MailData{
+		To:       "jackwong@owner.com",
+		From:     "your-program@bookings.com",
+		Subject:  "Reservation Notification",
+		Content:  htmlMsg,
+		Template: "basic.html",
+	}
+	m.App.MailChan <- msg
+
 	// Update session's reservation
 
 	// Stores the form data into our session storage (in-memory by default)

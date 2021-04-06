@@ -57,16 +57,9 @@ func run() error {
 	gob.Register(models.Restriction{})
 	gob.Register(models.RoomRestriction{})
 
+	// Initialize MailChan to app config
 	mailChan := make(chan models.MailData)
 	app.MailChan = mailChan
-
-	msg := models.MailData{
-		To:      "jackwong3101@yahoo.com",
-		From:    "me@here.com",
-		Subject: "Some subject",
-		Content: "",
-	}
-	app.MailChan <- msg
 
 	app.InProduction = false // Change this to true when in production
 	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
