@@ -41,6 +41,12 @@ func TestMain(m *testing.M) {
 
 	app.Session = session
 
+	// Initialize MailChan to app config
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+	defer close(mailChan)
+	listenForMail()
+
 	templateCache, err := CreateTestTemplateCache()
 	if err != nil {
 		log.Fatal("Error creating template cache")
@@ -55,6 +61,14 @@ func TestMain(m *testing.M) {
 	NewHandlers(repo)            // assign this newly created repo to Repo (global in handlers package)
 	render.NewRenderer(&app)
 	os.Exit(m.Run())
+}
+
+func listenForMail() {
+	go func() {
+		for {
+			<-app.MailChan
+		}
+	}()
 }
 
 func getRoutes() http.Handler {

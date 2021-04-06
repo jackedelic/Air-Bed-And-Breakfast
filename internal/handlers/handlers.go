@@ -130,11 +130,14 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	reservation.FirstName = r.Form.Get("first_name")
 	reservation.LastName = r.Form.Get("last_name")
 	reservation.Email = r.Form.Get("email")
-	reservation.RoomID = roomID // This may be unnecessary since it may be in the session already
+	if roomID != 0 { // room_id supplied via form. otherwise its from session
+		reservation.RoomID = roomID
+	}
+	// reservation.Room and reservation.RoomID should be in the session already
 
 	form := forms.New(r.PostForm)
 	// log.Println(r.PostForm)
-	// log.Println(r.Form)
+	log.Println(r.Form)
 
 	form.Required("email", "first_name", "last_name")
 	form.MinLength("first_name", 3)
@@ -154,7 +157,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	}
 	newReservationID, err := m.DBRepo.InsertReservation(reservation)
 	if err != nil {
-		m.App.ErrorLog.Println("Error inserting reservation to the database")
+		m.App.ErrorLog.Println("Error inserting reservation to the database", err)
 		m.App.Session.Put(r.Context(), "error", "server error inserting reservation the database")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -484,6 +487,7 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 	}
 	reservation.Room = room
+	reservation.RoomID = roomID
 
 	// Put out models.Reservatio object into session
 	m.App.Session.Put(r.Context(), "reservation", reservation)
