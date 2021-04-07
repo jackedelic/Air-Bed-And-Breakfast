@@ -3,7 +3,7 @@
 <div class="container">
   <div class="row">
     <div class="col">
-      <form action="/login" method="POST" class="" novalidate>
+      <form action="/user/login" method="POST" class="" novalidate>
         <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
         <div class="mb-3">
           <label for="email" class="form-label">Email address</label>
@@ -25,7 +25,7 @@
           {{ with .Form.Errors.Get "password"}}
           <label for="password" class="text-danger">{{.}}</label>
           {{ end }}
-          <input required name="password" type="text" class="form-control
+          <input required name="password" type="password" class="form-control
           {{with .Form.Errors.Get "password"}}is-invalid{{ end }}" id="password"
           value="" />
           <div class="valid-feedback">Looks good!</div>
