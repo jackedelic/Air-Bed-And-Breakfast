@@ -49,3 +49,19 @@ func (m *testingDBRepo) GetRoomById(id int) (models.Room, error) {
 	}
 	return room, nil
 }
+
+// GetUserByID returns the user by id
+func (m *testingDBRepo) GetUserById(id int) (models.User, error) {
+	var u models.User
+	return u, nil
+}
+
+// UpdateUser updates the user
+func (m *testingDBRepo) UpdateUser(u models.User) error {
+	return nil
+}
+
+// Authenticate authenticates user by user-given email and password
+func (m *testingDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+	return 0, "", nil
+}
