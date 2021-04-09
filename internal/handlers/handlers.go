@@ -165,7 +165,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	// Creates a RoomRestriction object (corresponds to a row in a db)
 	roomRestriction := models.RoomRestriction{
-		StartDate:     reservation.StartDate,
+		StartDate:     reservation.StartDate, // dd-mm-yyyy (but mysql stores yyyy-mm-dd)
 		EndDate:       reservation.EndDate,
 		RoomID:        roomID,
 		ReservationID: newReservationID,
@@ -547,4 +547,29 @@ func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
 // AdminDashboard renders the admin-dashboard page
 func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-dashboard.page.tmpl", &models.TemplateData{})
+}
+
+// AdminNewReservations
+func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-new-reservations.page.tmpl", &models.TemplateData{})
+}
+
+// AdminAllReservations
+func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
+	reservations, err := m.DBRepo.GetAllReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	data := make(map[string]interface{})
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-all-reservations.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
+}
+
+// AdminReservationsCalendar
+func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{})
 }

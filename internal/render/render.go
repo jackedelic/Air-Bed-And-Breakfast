@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/jackedelic/bookings/internal/config"
 	"github.com/jackedelic/bookings/internal/models"
@@ -15,7 +16,14 @@ import (
 
 var pathToTemplates = "./templates"
 
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+	"humanDate": HumanDate,
+}
+
+// HumanDate returns time in "dd mmm yyyy" format
+func HumanDate(t time.Time) string {
+	return t.Format("02 Jan 2006")
+}
 
 var app *config.AppConfig
 
