@@ -549,16 +549,29 @@ func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-dashboard.page.tmpl", &models.TemplateData{})
 }
 
-// AdminNewReservations
+// AdminNewReservations renders admin page with all new reservations data
 func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "admin-new-reservations.page.tmpl", &models.TemplateData{})
+	reservations, err := m.DBRepo.GetAllNewReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	data := make(map[string]interface{})
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-new-reservations.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
 }
 
-// AdminAllReservations
+// AdminAllReservations renders admin page with all reservations data
 func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
 	reservations, err := m.DBRepo.GetAllReservations()
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.ErrorLog.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Internal error getting all reservations")
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
 	}
 
 	data := make(map[string]interface{})
@@ -569,7 +582,41 @@ func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// AdminReservationsCalendar
+// AdminShowReservation renders reservation page for a particular reservation
+func (m *Repository) AdminShowReservation(w http.ResponseWriter, r *http.Request) {
+	resID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Error parsing url param")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	src := chi.URLParam(r, "src")
+	stringMap := make(map[string]string)
+	stringMap["src"] = src
+
+	// Get reservation from the database
+	res, err := m.DBRepo.GetReservationByID(resID)
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Internal error fetching reservation")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["reservation"] = res
+
+	m.App.InfoLog.Println(resID)
+	render.Template(w, r, "admin-reservations-show.page.tmpl", &models.TemplateData{
+		StringMap: stringMap,
+		Data:      data,
+		Form:      forms.New(nil),
+	})
+}
+
+// AdminReservationsCalendar renders the reservations calendar page for admin
 func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{})
 }

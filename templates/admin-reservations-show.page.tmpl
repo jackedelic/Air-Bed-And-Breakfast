@@ -1,0 +1,61 @@
+{{ template "admin" .}}
+{{ define "page-title"}}
+  Reservation
+{{ end }}
+
+{{ define "content" }}
+  {{$res := index .Data "reservation"}}
+  {{$src := index .StringMap "src"}}
+  <div class="col-md-12">
+    <p>
+      <strong>Arrival:</strong> {{humanDate $res.StartDate}} <br>
+      <strong>Departure:</strong> {{humanDate $res.EndDate}} <br>
+      <strong>Room:</strong> {{$res.Room.RoomName}} <br>
+      Show Reservation {{$res.FirstName}} {{$res.LastName}} <br>
+    </p>
+    <form action="/admin/reservations/{{$src}}/{{$res.ID}}" method="POST" class="" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        {{with .Form.Errors.Get "email"}}
+        <label for="email" class="text-danger">{{.}}</label>
+        {{ end }}
+        <input required name="email" type="email" class="form-control
+        {{with .Form.Errors.Get "email"}}is-invalid{{ end }}" id="email"
+        value="{{ $res.Email }}" aria-describedby="dateHelp" />
+        <div id="email" class="form-text">
+          We only send important stuffs to your precious inbox
+        </div>
+        <div class="valid-feedback">Looks good!</div>
+        <div class="invalid-feedback">Only valid email</div>
+      </div>
+
+      <div class="mb-3">
+        <label for="first_name" class="form-label">First Name</label>
+        {{with .Form.Errors.Get "first_name"}}
+        <label for="first_name" class="text-danger">{{.}}</label>
+        {{ end }}
+        <input required name="first_name" type="text" class="form-control
+        {{with .Form.Errors.Get "first_name"}}is-invalid{{ end }}"
+        id="first_name" value="{{ $res.FirstName }}" />
+        <div class="valid-feedback">Looks good!</div>
+        <div class="invalid-feedback">Kindly enter your first name</div>
+      </div>
+
+      <div class="mb-3">
+        <label for="last_name" class="form-label">Last Name</label>
+        {{ with .Form.Errors.Get "last_name"}}
+        <label for="last_name" class="text-danger">{{.}}</label>
+        {{ end }}
+        <input required name="last_name" type="text" class="form-control
+        {{with .Form.Errors.Get "last_name"}}is-invalid{{ end }}"
+        id="last_name" value="{{ $res.LastName }}" />
+        <div class="valid-feedback">Looks good!</div>
+        <div class="invalid-feedback">Kindly enter your last name</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Reservation</button>
+      <a href="/admin/reservations-{{$src}}" class="btn btn-warning">Cancel</a>
+    </form>
+  </div>
+{{ end }}

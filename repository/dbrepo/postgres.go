@@ -55,6 +55,7 @@ func (m *postgresDBRepo) InsertRoomRestriction(rr models.RoomRestriction) error 
 		time.Now())
 
 	if err != nil {
+		m.App.ErrorLog.Println(err)
 		return err
 	}
 
@@ -213,7 +214,8 @@ func (m *postgresDBRepo) GetAllReservations() ([]models.Reservation, error) {
 	var reservations []models.Reservation
 
 	query := `
-		select r.id, r.first_name, r.last_name, r.email, r.start_date, r.end_date, r.room_id, r.created_at, r.updated_at,
+		select r.id, r.first_name, r.last_name, r.email, r.start_date, r.end_date, r.room_id,
+		r.created_at, r.updated_at, r.processed,
 		rm.id, rm.room_name
 		from reservations r
 		left join rooms rm on (r.room_id = rm.id)
@@ -229,7 +231,7 @@ func (m *postgresDBRepo) GetAllReservations() ([]models.Reservation, error) {
 	for rows.Next() {
 		var r models.Reservation
 		err := rows.Scan(&r.ID, &r.FirstName, &r.LastName, &r.Email,
-			&r.StartDate, &r.EndDate, &r.RoomID, &r.CreatedAt, &r.UpdatedAt, &r.Room.ID, &r.Room.RoomName)
+			&r.StartDate, &r.EndDate, &r.RoomID, &r.CreatedAt, &r.UpdatedAt, &r.Processed, &r.Room.ID, &r.Room.RoomName)
 
 		if err != nil {
 			return reservations, err
@@ -240,4 +242,68 @@ func (m *postgresDBRepo) GetAllReservations() ([]models.Reservation, error) {
 		return reservations, err
 	}
 	return reservations, nil
+}
+
+// GetAllNewReservations returns a slice of all the new reservations (processed = 0)
+func (m *postgresDBRepo) GetAllNewReservations() ([]models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var reservations []models.Reservation
+
+	query := `
+		select r.id, r.first_name, r.last_name, r.email, r.start_date, r.end_date, r.room_id,
+		r.created_at, r.updated_at, r.processed,
+		rm.id, rm.room_name
+		from reservations r
+		left join rooms rm on (r.room_id = rm.id)
+		where r.processed = 0
+		order by r.start_date asc
+	`
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return reservations, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.Reservation
+		err := rows.Scan(&r.ID, &r.FirstName, &r.LastName, &r.Email,
+			&r.StartDate, &r.EndDate, &r.RoomID, &r.CreatedAt, &r.UpdatedAt,
+			&r.Processed, &r.Room.ID, &r.Room.RoomName)
+
+		if err != nil {
+			return reservations, err
+		}
+		reservations = append(reservations, r)
+	}
+	if err = rows.Err(); err != nil {
+		return reservations, err
+	}
+	return reservations, nil
+}
+
+// GetReservationByID returns a reservation by id
+func (m *postgresDBRepo) GetReservationByID(id int) (models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var res models.Reservation
+
+	query := `select r.id, r.first_name, r.last_name, r.email, r.start_date, r.end_date, r.room_id,
+		r.created_at, r.updated_at, r.processed,
+		rm.id, rm.room_name
+		from reservations r
+		left join rooms rm on (r.room_id = rm.id)
+		where r.id = $1
+		order by r.start_date asc
+	`
+	row := m.DB.QueryRowContext(ctx, query, id)
+	err := row.Scan(&res.ID, &res.FirstName, &res.LastName, &res.Email, &res.StartDate, &res.EndDate, &res.RoomID,
+		&res.CreatedAt, &res.UpdatedAt, &res.Processed, &res.Room.ID, &res.Room.RoomName)
+
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }
