@@ -18,6 +18,12 @@
       rel="stylesheet"
       href="/static/admin/vendors/base/vendor.bundle.base.css"
     />
+    <!-- notie -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://unpkg.com/notie/dist/notie.min.css"
+    />
     <!-- endinject -->
     <!-- plugin css for this page -->
     <!-- End plugin css for this page -->
@@ -30,6 +36,7 @@
         font-weight: bold;
       }
     </style>
+    <link rel="stylesheet" href="/static/css/index.css" />
     {{ block "css" .}}
     {{
       end
@@ -157,9 +164,80 @@
     <!-- Custom js for this page-->
     <script src="/static/admin/js/dashboard.js"></script>
     <!-- End custom js for this page-->
-    {{ block "js" . }}
-    {{ end }}
+    <!-- notification (notie)-->
+    <script src="https://unpkg.com/notie"></script>
+    <!-- alert/notification (sweetalert)-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.15.5/dist/sweetalert2.all.min.js"></script>
+    <script>
+      function notify({ msg, msgType = 'success', duration = 3 }) {
+        notie.alert({
+          type: msgType, // optional, default = 4, enum: [1, 2, 3, 4, 5, 'success', 'warning', 'error', 'info', 'neutral']
+          text: msg,
+          time: duration, // optional, default = 3, minimum = 1,
+          position: 'top' // optional, default = 'top', enum: ['top', 'bottom']
+        })
+      }
+      {{ with .Error }}
+        notify({msg: "{{.}}", msgType: "error"})
+      {{end}}
+      {{ with .Flash}}
+        notify({msg: "{{.}}", msgType: "success"})
+      {{end}}
+      {{ with .Warning}}
+        notify({msg: "{{.}}", msgType: "warning"})
+      {{end}}
+      function showAlert({ title, text, icon, confirmButtonText }) {
+        Swal.fire({
+          title,
+          text,
+          icon,
+          confirmButtonText
+        })
+      }
+      // showAlert({
+      //   title: 'Error',
+      //   text: 'Good job',
+      //   icon: 'success',
+      //   confirmaButtonText: 'confirm'
+      // })
+      function showToast({ msg = '', icon = 'success', position = 'top-end' }) {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: toast => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+          }
+        })
+
+        Toast.fire({
+          icon,
+          title: msg
+        })
+      }
+      //showToast({ msg: "What's up" })
+    </script>
+    <script>
+      async function customAlertHtml({ title, html, cb }) {
+        const res = await Swal.fire({
+          title,
+          html,
+          showCancelButton: true,
+          focusConfirm: true,
+          confirmButtonText: 'Confirm',
+          willOpen: () => {
+            
+          },
+          preConfirm: () => {}
+        })
+        cb(res)
+      }
+    </script>
   </body>
 </html>
-
+{{ block "js" . }}
+{{ end }}
 {{ end }}

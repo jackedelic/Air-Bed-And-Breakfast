@@ -11,3 +11,6 @@ This is the repository for my bookings and reservations project
 
 - Uses [RoyalUI-Free-Bootstrap-Admin-Template](https://github.com/BootstrapDash/RoyalUI-Free-Bootstrap-Admin-Template) for building admin dashboard
 - Uses [Simple-Data](https://github.com/fiduswriter/Simple-DataTables) for builing reservations table
+- Uses [notie](https://github.com/jaredreich/notie) for notification (warning, success, error messages)
+- Uses [sweetalert](https://sweetalert2.github.io) for interactive popup (confirmation message)
+- Uses [vanillajs-datepicker](https://www.npmjs.com/package/vanillajs-datepicker) for date picking
