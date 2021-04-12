@@ -98,3 +98,9 @@ func (m *testingDBRepo) DeleteReservation(id int) error {
 func (m *testingDBRepo) UpdateProcessedForReservation(id, processed int) error {
 	return nil
 }
+
+// GetAllRooms returns a slice of models.Room containing all existing rooms
+func (m *testingDBRepo) GetAllRooms() ([]models.Room, error) {
+	var rooms []models.Room
+	return rooms, nil
+}

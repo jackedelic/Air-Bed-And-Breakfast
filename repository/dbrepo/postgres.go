@@ -108,6 +108,7 @@ func (m *postgresDBRepo) SearchAvailableRoomsByDates(start, end time.Time) ([]mo
 	if err != nil {
 		return []models.Room{}, err
 	}
+	defer rows.Close()
 
 	var rooms []models.Room
 
@@ -142,6 +143,34 @@ func (m *postgresDBRepo) GetRoomById(id int) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+// GetAllRooms returns a slice of models.Room containing all existing rooms
+func (m *postgresDBRepo) GetAllRooms() ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms []models.Room
+	query := `select id, room_name, created_at, updated_at from rooms order by room_name`
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return rooms, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		room := models.Room{}
+		err = rows.Scan(&room.ID, &room.RoomName, &room.CreatedAt, &room.UpdatedAt)
+		if err != nil {
+			return rooms, err
+		}
+		rooms = append(rooms, room)
+	}
+	if err = rows.Err(); err != nil {
+		return rooms, err
+	}
+	return rooms, nil
 }
 
 // GetUserById returns a user by id
