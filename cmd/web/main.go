@@ -56,6 +56,7 @@ func run() error {
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
 	gob.Register(models.RoomRestriction{})
+	gob.Register(map[string]int{})
 
 	// Initialize MailChan to app config
 	mailChan := make(chan models.MailData)

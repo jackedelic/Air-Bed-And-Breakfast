@@ -671,11 +671,11 @@ func (m *Repository) AdminUpdateReservation(w http.ResponseWriter, r *http.Reque
 	http.Redirect(w, r, fmt.Sprintf("/admin/reservations-%s", src), http.StatusSeeOther)
 }
 
-// AdminReservationsCalendar renders the reservations calendar page for admin
+// AdminReservationsCalendar renders the admin reservations calendar page for the given year and month (default current year and month)
 func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Request) {
 	// Assume that there is no month or year specified
 	now := time.Now()
-	if r.URL.Query().Get("y") != "" {
+	if r.URL.Query().Get("y") != "" && r.URL.Query().Get("m") != "" {
 		year, _ := strconv.Atoi(r.URL.Query().Get("y"))
 		month, _ := strconv.Atoi(r.URL.Query().Get("m"))
 		now = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
@@ -700,7 +700,7 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 	// Get the first and last day of the month
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
-	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation) // I think this is unnecessary, it's the same as now
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 
 	intMap := make(map[string]int)
@@ -717,6 +717,45 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 		return
 	}
 	data["rooms"] = rooms
+	// Focus on the current month for the current year.
+	// For every room (we/owner only have two rooms), find all room restrictions within this month. Each room restriction
+	// means the corresponding room is restricted either due to other customer reserves already or the owner blocks it.
+	for _, rm := range rooms {
+		reservationMap := make(map[string]int)
+		blockMap := make(map[string]int)
+
+		for d := firstOfMonth; !d.After(lastOfMonth); d = d.AddDate(0, 0, 1) {
+			reservationMap[d.Format("2006-01-2")] = 0
+			blockMap[d.Format("2006-01-02")] = 0
+		}
+
+		// Get all room restrictions (reservation/blocked) for the currect room
+		roomRestrictions, err := m.DBRepo.GetRoomRestrictionsForRoomByDate(rm.ID, firstOfMonth, lastOfMonth)
+		if err != nil {
+			m.App.ErrorLog.Println(err)
+			m.App.Session.Put(r.Context(), "error", "Internal error retrieving room restrictions for the given room")
+			http.Redirect(w, r, r.Header.Get("Referer"), http.StatusInternalServerError)
+			return
+		}
+
+		for _, y := range roomRestrictions {
+			if y.ReservationID > 0 { // restricted due to the room being reserved by other customers
+				for d := y.StartDate; !d.After(y.EndDate); d = d.AddDate(0, 0, 1) {
+					reservationMap[d.Format("2006-01-2")] = y.ReservationID
+				}
+			} else { // restricted due to the room being blocked by the owner
+				for d := y.StartDate; !d.After(y.EndDate); d = d.AddDate(0, 0, 1) {
+					blockMap[d.Format("2006-01-2")] = y.RestrictionID
+				}
+			}
+		}
+
+		// One reservationMap for every room, and one blockMap for every room
+		data[fmt.Sprintf("reservation_map_%d", rm.ID)] = reservationMap
+		data[fmt.Sprintf("block_map_%d", rm.ID)] = blockMap
+
+		m.App.Session.Put(r.Context(), fmt.Sprintf("block_map_%d", rm.ID), blockMap)
+	}
 
 	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
