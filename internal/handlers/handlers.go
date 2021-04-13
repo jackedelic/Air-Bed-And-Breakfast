@@ -690,15 +690,38 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 	lastMonthYear := last.Format("2006")
 
 	stringMap := make(map[string]string)
-	stringMap["this_month"] = now.Format("Jan")
+	stringMap["this_month"] = now.Format("01")
 	stringMap["this_month_year"] = now.Format("2006")
 	stringMap["next_month"] = nextMonth
 	stringMap["next_month_year"] = nextMonthYear
 	stringMap["last_month"] = lastMonth
 	stringMap["last_month_year"] = lastMonthYear
 
+	// Get the first and last day of the month
+	currentYear, currentMonth, _ := now.Date()
+	currentLocation := now.Location()
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
+	intMap := make(map[string]int)
+	intMap["num_days_in_month"] = lastOfMonth.Day()
+
+	data := make(map[string]interface{})
+	data["now"] = now
+
+	rooms, err := m.DBRepo.GetAllRooms()
+	if err != nil {
+		m.App.ErrorLog.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Internal error getting all rooms from the database")
+		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusInternalServerError)
+		return
+	}
+	data["rooms"] = rooms
+
 	render.Template(w, r, "admin-reservations-calendar.page.tmpl", &models.TemplateData{
 		StringMap: stringMap,
+		Data:      data,
+		IntMap:    intMap,
 	})
 }
 

@@ -3,18 +3,49 @@
 Reservations Calendar
 {{ end }}
 {{ define "content"}}
+{{$now := index .Data "now"}}
+{{$rooms := index .Data "rooms"}}
+{{$numDays := index .IntMap "num_days_in_month"}}
 <div class="col-md-12">
   <div class="text-center">
-    <h3>
-      {{index .StringMap "this_month"}} {{index .StringMap "this_month_year"}}
-    </h3>
+    <h3>{{formatDate $now "January"}} {{formatDate $now "2006"}}</h3>
     <div class="d-flex flex-row">
-      <a href='/admin/reservations-calendar?y={{index .StringMap "last_month_year"}}&m={{index .StringMap "last_month"}}'
-      class="btn btn-sm btn-outline-secondary mr-auto">&lt;&lt;</a>
-      <a href='/admin/reservations-calendar?y={{index .StringMap "next_month_year"}}&m={{index .StringMap "next_month"}}'
-      class="btn btn-sm btn-outline-secondary ml-auto">&gt;&gt;</a>
+      <a
+        href="/admin/reservations-calendar?y={{index .StringMap "last_month_year"}}&m={{index .StringMap "last_month"}}"
+        class="btn btn-sm btn-outline-secondary mr-auto"
+        >&lt;&lt;</a
+      >
+      <a
+        href="/admin/reservations-calendar?y={{index .StringMap "next_month_year"}}&m={{index .StringMap "next_month"}}"
+        class="btn btn-sm btn-outline-secondary ml-auto"
+        >&gt;&gt;</a
+      >
     </div>
+    <!-- Every room is a table -->
+    {{ range $rooms }} 
+    {{$roomID := .ID}}
+    <h4 class="mt-4">{{.RoomName}}</h4>
+    <div class="table-response">
+      <table class="table table-bordered table-sm">
+        <tr class="table-dark">
+          {{ range $index := iterate $numDays }}
+          <td class="text-center">
+            {{$index}}
+          </td>
+          {{
+            end
+          }}
+        </tr>
+        <tr>
+          {{ range $index := iterate $numDays }}
+            <td class="text-center">
+              <input type="checkbox" name="" id="">
+            </td>
+          {{ end }}
+        </tr>
+      </table>
+    </div>
+    {{ end }}
   </div>
-
 </div>
 {{ end }}
