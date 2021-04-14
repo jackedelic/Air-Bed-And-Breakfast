@@ -7,7 +7,7 @@ Reservations Calendar
 {{$rooms := index .Data "rooms"}}
 {{$numDays := index .IntMap "num_days_in_month"}}
 {{$curMonth := index .StringMap "this_month"}}
-{{$curMonthYear := index .StringMap "this_month_year"}}
+{{$curYear := index .StringMap "this_month_year"}}
 <div class="col-md-12">
   <div class="text-center">
       <h3>{{formatDate $now "January"}} {{formatDate $now "2006"}}</h3>
@@ -23,28 +23,45 @@ Reservations Calendar
         >&gt;&gt;</a
       >
     </div>
-    <!-- Every room is a table -->
+    <!-- Every room is a table with two rows (day number and checkboxes) -->
     {{ range $rooms }} 
-    {{$roomID := .ID}}
-    <h4 class="mt-4">{{.RoomName}}</h4>
-    <div class="table-response">
-      <table class="table table-bordered table-sm">
-        <tr class="table-dark">
-          {{ range $index := iterate $numDays }}
-          <td class="text-center">
-            {{$index}}
-          </td>
-          {{ end }}
-        </tr>
-        <tr>
-          {{ range $index := iterate $numDays }}
+      {{$roomID := .ID}}
+      {{$reservations := index $.Data (printf "reservation_map_%d" .ID)}}
+      {{$blocks := index $.Data (printf "block_map_%d" .ID)}}
+      <h4 class="mt-4">{{.RoomName}}</h4>
+      <div class="table-response">
+        <table class="table table-bordered table-sm">
+          <tr class="table-dark">
+            {{ range $index := iterate $numDays }}
             <td class="text-center">
-              <input type="checkbox" name="" id="">
+              {{$index}}
             </td>
-          {{ end }}
-        </tr>
-      </table>
-    </div>
+            {{ end }}
+          </tr>
+          <tr>
+            {{ range $index := iterate $numDays }}
+              <td class="text-center">
+                {{if gt (index $reservations (printf "%s-%s-%d" $curYear $curMonth $index )) 0}}
+                  <a href="/admin/reservations/cal/{{index $reservations (printf "%s-%s-%d" $curYear $curMonth $index)}}">
+                    <span class="text-danger">R</span>
+                  </a>
+                {{else}}
+                  <input 
+                    {{if gt (index $blocks (printf "%s-%s-%d" $curYear $curMonth $index)) 0}}
+                      checked
+                      name="remove_block_{{$roomID}}_{{printf "%s-%s-%d" $curYear $curMonth $index}}"
+                      value="{{index $blocks (printf "%s-%s-%d" $curYear $curMonth $index)}}"
+                    {{else}}
+                      name="add_block_{{$roomID}}_{{printf "%s-%s-%d" $curYear $curMonth $index}}"
+                      value="{{index $reservations (printf "%s-%s-%d" $curYear $curMonth $index)}}"
+                    {{end}}
+                    type="checkbox">
+                {{end}}
+              </td>
+            {{ end }}
+          </tr>
+        </table>
+      </div>
     {{ end }}
   </div>
 </div>

@@ -720,9 +720,9 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 	// Focus on the current month for the current year.
 	// For every room (we/owner only have two rooms), find all room restrictions within this month. Each room restriction
 	// means the corresponding room is restricted either due to other customer reserves already or the owner blocks it.
-	for _, rm := range rooms {
-		reservationMap := make(map[string]int)
-		blockMap := make(map[string]int)
+	for _, rm := range rooms { // only have two rooms - General's Quarter and Major's Suite
+		reservationMap := make(map[string]int) // mapping of the date reserved to the reservation id (only for this room)
+		blockMap := make(map[string]int)       // mapping of the date blocked to the room_restriction id (only for this room)
 
 		for d := firstOfMonth; !d.After(lastOfMonth); d = d.AddDate(0, 0, 1) {
 			reservationMap[d.Format("2006-01-2")] = 0
@@ -745,12 +745,12 @@ func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Re
 				}
 			} else { // restricted due to the room being blocked by the owner
 				for d := y.StartDate; !d.After(y.EndDate); d = d.AddDate(0, 0, 1) {
-					blockMap[d.Format("2006-01-2")] = y.RestrictionID
+					blockMap[d.Format("2006-01-2")] = y.ID // room_restrictions' id. We dont want restriction_id cus restriction_id is the type of restriction (reservation or block)
 				}
 			}
 		}
 
-		// One reservationMap for every room, and one blockMap for every room
+		// One reservationMap for this particular room, and one blockMap for this particular room
 		data[fmt.Sprintf("reservation_map_%d", rm.ID)] = reservationMap
 		data[fmt.Sprintf("block_map_%d", rm.ID)] = blockMap
 
