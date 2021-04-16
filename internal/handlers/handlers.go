@@ -839,7 +839,7 @@ func (m *Repository) AdminPostReservationCalendar(w http.ResponseWriter, r *http
 			err := m.DBRepo.InsertBlockForRoom(roomID, blockDate)
 			if err != nil {
 				m.App.ErrorLog.Println(err)
-				helpers.ServerError(w, err)
+				http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
 				return
 			}
 		}

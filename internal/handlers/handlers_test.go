@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -468,6 +469,87 @@ var loginTests = []struct {
 	{"valid-credentials", "me@here.ca", http.StatusSeeOther, "", "/"}, // testingDBRepo.Authenticate recognizes me@here.ca as the only valid emailk
 	{"invalid-credentials", "jack@nimble.com", http.StatusSeeOther, "", "/user/login"},
 	{"invalid-data", "invalid-email@", http.StatusUnauthorized, `action="/user/login"`, ""},
+}
+
+var adminPostReservationCalendarTests = []struct {
+	name                 string
+	postedData           url.Values
+	expectedResponseCode int
+	expectedLocation     string
+	expectedHTML         string
+	blockID              int
+	reservationID        int
+}{
+	{
+		name: "cal",
+		postedData: url.Values{
+			"year":  {time.Now().Format("2006")},
+			"month": {time.Now().Format("01")},
+			fmt.Sprintf("add_block_1_%s", time.Now().AddDate(0, 0, 2).Format("2006-01-2")): {"1"},
+		},
+		expectedResponseCode: http.StatusSeeOther,
+	},
+	{
+		name:                 "cal-blocks",
+		postedData:           url.Values{},
+		expectedResponseCode: http.StatusSeeOther,
+		blockID:              1,
+	},
+	{
+		name:                 "cal-res",
+		postedData:           url.Values{},
+		expectedResponseCode: http.StatusSeeOther,
+		reservationID:        1,
+	},
+}
+
+func TestPostReservationCalendar(t *testing.T) {
+	for _, e := range adminPostReservationCalendarTests {
+		var req *http.Request
+		if e.postedData != nil {
+			req, _ = http.NewRequest("POST", "/admin/reservations-calendar", strings.NewReader(e.postedData.Encode()))
+		} else {
+			req, _ = http.NewRequest("POST", "/admin/reservations-calendar", nil)
+		}
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		now := time.Now()
+		bm := make(map[string]int)
+		rm := make(map[string]int)
+
+		currentYear, currentMonth, _ := now.Date()
+		currentLocation := now.Location()
+
+		firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+		lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
+		for d := firstOfMonth; !d.After(lastOfMonth); d = d.AddDate(0, 0, 1) {
+			rm[d.Format("2006-02-01")] = 0
+			bm[d.Format("2006-02-01")] = 0
+		}
+
+		if e.blockID > 0 { // only one day is blocked in this test (irl we loop thru room_restrictions' id)
+			bm[firstOfMonth.Format("2006-02-01")] = e.blockID
+		}
+		if e.reservationID > 0 { // only one day is reserved in this test (irl we loop thru room_restrictions' reservations)
+			rm[firstOfMonth.Format("2006-02-01")] = e.reservationID
+		}
+
+		session.Put(ctx, "block_map_1", bm)
+		session.Put(ctx, "reservation_map_1", rm)
+
+		// set the header
+		req.Header.Set("Content-Type", "x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+
+		// call the handler
+		Repo.AdminPostReservationCalendar(rr, req)
+
+		if rr.Code != e.expectedResponseCode {
+			t.Errorf("failed %s: expected code %d, but got %d", e.name, e.expectedResponseCode, rr.Code)
+		}
+	}
 }
 
 func TestLogin(t *testing.T) {
