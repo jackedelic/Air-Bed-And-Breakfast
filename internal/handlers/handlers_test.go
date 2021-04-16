@@ -32,9 +32,16 @@ var theTests = []struct {
 	{"generals quarters page", "/generals-quarters", "GET", http.StatusOK},
 	{"majors suite page", "/majors-suite", "GET", http.StatusOK},
 	{"contact page", "/contact", "GET", http.StatusOK},
+	{"non-existent route", "/havefun/burgerking", "GET", http.StatusNotFound},
+	{"login page", "/user/login", "GET", http.StatusOK},
+	{"admin dashboard", "/admin/dashboard", "GET", http.StatusOK},
+	{"admin show new reservations", "/admin/reservations-new", "GET", http.StatusOK},
+	{"admin show all reservations", "/admin/reservations-all", "GET", http.StatusOK},
+	{"admin show reservations calendar", "/admin/reservations-calendar", "GET", http.StatusOK},
+	{"admin show reservation", "/admin/reservations/new/1", "GET", http.StatusOK},
 }
 
-func aTestHandlers(t *testing.T) {
+func TestHandlers(t *testing.T) {
 	routes := getRoutes()
 	server := httptest.NewTLSServer(routes)
 	defer server.Close()
@@ -327,6 +334,63 @@ func TestRepository_SearchAvailabilityJSON(t *testing.T) {
 		if jsonResponse.Message != expectedMsg {
 			t.Errorf("Test description: %s \nThe json response had the wrong Message value: got %s, wanted %s",
 				desc, jsonResponse.Message, expectedMsg)
+		}
+	}
+}
+
+var loginTests = []struct {
+	name               string
+	email              string
+	expectedStatusCode int
+	expectedHTML       string
+	expectedLocation   string
+}{
+	{"valid-credentials", "me@here.ca", http.StatusSeeOther, "", "/"}, // testingDBRepo.Authenticate recognizes me@here.ca as the only valid emailk
+	{"invalid-credentials", "jack@nimble.com", http.StatusSeeOther, "", "/user/login"},
+	{"invalid-data", "invalid-email@", http.StatusUnauthorized, `action="/user/login"`, ""},
+}
+
+func TestLogin(t *testing.T) {
+	// range through all tests
+	for _, e := range loginTests {
+		postedData := url.Values{}
+		postedData.Add("email", e.email)
+		postedData.Add("password", "password")
+
+		// create a request
+		req, _ := http.NewRequest("POST", "/user/login", strings.NewReader(postedData.Encode()))
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		// set the header
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+
+		// call the handler
+		handler := http.HandlerFunc(Repo.PostLogin)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("failed %s: expected code %d, but got %d", e.name, e.expectedStatusCode, rr.Code)
+		}
+
+		// check redirected url if the response redirects
+		if e.expectedLocation != "" {
+			// get the url from test
+			actualLoc, _ := rr.Result().Location()
+			if actualLoc.String() != e.expectedLocation {
+				t.Errorf("failed %s: expected location %s, but got %s", e.name, e.expectedLocation, actualLoc.String())
+			}
+		}
+
+		// check for expected html contained in the received HTML
+		if e.expectedHTML != "" {
+			// read the response body into a string
+			actualHTML := rr.Body.String()
+			if !strings.Contains(actualHTML, e.expectedHTML) {
+				t.Errorf("failed %s: expected to find %s, but did not", e.name, e.expectedHTML)
+			}
+
 		}
 	}
 }

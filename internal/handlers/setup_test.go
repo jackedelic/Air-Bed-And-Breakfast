@@ -20,13 +20,22 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+	"humanDate":  render.HumanDate,
+	"formatDate": render.FormatDate,
+	"iterate":    render.Iterate,
+}
 var pathToTemplates = "../../templates"
 var session *scs.SessionManager
 var app config.AppConfig
 
 func TestMain(m *testing.M) {
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+	gob.Register(models.RoomRestriction{})
+	gob.Register(map[string]int{})
 
 	// setup loggers for app config
 	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -86,9 +95,27 @@ func getRoutes() http.Handler {
 	mux.Get("/majors-suite", Repo.MajorsSuite)
 	mux.Get("/contact", Repo.Contact)
 
+	mux.Get("/user/login", Repo.ShowLogin)
+	mux.Post("/user/login", Repo.PostLogin)
+	mux.Get("/user/logout", Repo.Logout)
+
 	mux.Post("/search-availability-json", Repo.SearchAvailabilityJSON)
 	mux.Post("/search-availability", Repo.PostSearchAvailability)
 	mux.Post("/receive-json", Repo.ReceiveJSON)
+
+	mux.Route("/admin", func(mux chi.Router) {
+		// mux.Use(Auth)
+		mux.Get("/dashboard", Repo.AdminDashboard)
+		mux.Get("/reservations-new", Repo.AdminNewReservations)
+		mux.Get("/reservations-all", Repo.AdminAllReservations)
+		mux.Get("/reservations-calendar", Repo.AdminReservationsCalendar)
+		mux.Post("/reservations-calendar", Repo.AdminPostReservationCalendar)
+		mux.Get("/reservations/{src}/{id}", Repo.AdminShowReservation)
+
+		mux.Post("/reservations/{src}/{id}", Repo.AdminUpdateReservation)
+		mux.Get("/process-reservation/{src}/{id}", Repo.AdminProcessReservation)
+		mux.Get("/delete-reservation/{src}/{id}", Repo.AdminDeleteReservation)
+	})
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
