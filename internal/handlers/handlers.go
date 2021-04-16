@@ -78,7 +78,7 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// MakeReservation handles GET /make-reservation
+// MakeReservation handles GET /make-reservation that renders a form to make a reservation
 func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 	// Pull out reservation from session
 	reserv, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
@@ -359,7 +359,8 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	err := r.ParseForm()
 	if err != nil {
 		m.App.ErrorLog.Println("Error parsing form")
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "Error parsing form")
+		http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
 		return
 	}
 	// Retrieve start date and end date from the form
@@ -367,17 +368,23 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 	end := r.Form.Get("end")
 	sd, err := time.Parse("02-01-2006", start)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "Error parsing start date")
+		http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+		return
 	}
 	ed, err := time.Parse("02-01-2006", end)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "Error parsing end date")
+		http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+		return
 	}
 
 	// Get all available rooms from db for the given start and end dates.
 	rooms, err := m.DBRepo.SearchAvailableRoomsByDates(sd, ed)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "No Available rooms for the given dates")
+		http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+		return
 	}
 
 	for _, r := range rooms {
@@ -399,7 +406,7 @@ func (m *Repository) PostSearchAvailability(w http.ResponseWriter, r *http.Reque
 		StartDate: sd,
 		EndDate:   ed,
 	}
-
+	log.Println(res)
 	m.App.Session.Put(r.Context(), "reservation", res)
 
 	// w.Write([]byte(fmt.Sprintf("star tdate is %s, end date is %s", start, end)))

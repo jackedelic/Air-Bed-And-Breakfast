@@ -338,6 +338,74 @@ func TestRepository_SearchAvailabilityJSON(t *testing.T) {
 	}
 }
 
+// Tests POST /search-availability
+var testPostAvailabilityData = []struct {
+	name               string
+	postedData         url.Values
+	expectedStatusCode int
+	expectedLocation   string
+}{
+	{
+		name: "rooms not available :(",
+		postedData: url.Values{
+			"start": {"01-01-2050"}, // testingDBRepo.SearchAvailableRoomsByDate returns empty slice for "01-01-2050" (start or end date)
+			"end":   {"02-01-2050"},
+		},
+		expectedStatusCode: http.StatusSeeOther,
+	},
+	{
+		name: "rooms are available :)",
+		postedData: url.Values{
+			"start": {"01-01-2040"},
+			"end":   {"02-01-2040"},
+		},
+		expectedStatusCode: http.StatusOK,
+	},
+	{
+		name:               "empty post body",
+		postedData:         url.Values{},
+		expectedStatusCode: http.StatusInternalServerError,
+	},
+	{
+		name: "start date wrong format",
+		postedData: url.Values{
+			"start": {"2040-02-01"},
+			"end":   {"01-02-2040"},
+		},
+		expectedStatusCode: http.StatusInternalServerError,
+	},
+	{
+		name: "end date wrong format",
+		postedData: url.Values{
+			"start": {"01-02-2040"},
+			"end":   {"2040-02-01"},
+		},
+		expectedStatusCode: http.StatusInternalServerError,
+	},
+}
+
+func TestRepository_PostSearchAvailability(t *testing.T) {
+	for _, e := range testPostAvailabilityData {
+		req, _ := http.NewRequest("POST", "/search-availability", strings.NewReader(e.postedData.Encode()))
+
+		// get the context with session
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		// set the request header
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+
+		// make our PostSearchAvailability handler an http.HandlerFunc and call
+		handler := http.HandlerFunc(Repo.PostSearchAvailability)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("%s gave wrong status code: got %d, wanted %d", e.name, rr.Code, e.expectedStatusCode)
+		}
+	}
+}
+
 var loginTests = []struct {
 	name               string
 	email              string

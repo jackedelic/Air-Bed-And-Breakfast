@@ -38,6 +38,14 @@ func (m *testingDBRepo) SearchAvailabilityByDatesByRoomID(start, end time.Time, 
 
 func (m *testingDBRepo) SearchAvailableRoomsByDates(start, end time.Time) ([]models.Room, error) {
 	var rooms []models.Room
+	if start.Format("02-01-2006") == "01-01-2050" || end.Format("02-01-2006") == "01-01-2050" {
+		return rooms, nil
+	}
+	room := models.Room{
+		ID:       1,
+		RoomName: "Generals Quarters",
+	}
+	rooms = append(rooms, room)
 	return rooms, nil
 }
 
