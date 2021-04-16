@@ -406,6 +406,58 @@ func TestRepository_PostSearchAvailability(t *testing.T) {
 	}
 }
 
+var reservationSummaryTests = []struct {
+	name               string
+	reservation        models.Reservation
+	url                string
+	expectedStatusCode int
+	expectedLocation   string
+}{
+	{
+		name: "res-in-session",
+		reservation: models.Reservation{
+			RoomID: 1,
+			Room: models.Room{
+				ID:       1,
+				RoomName: "Generals Quarters",
+			},
+			StartDate: time.Now(),
+			EndDate:   time.Now(),
+		},
+		url:                "/reservation-summary",
+		expectedStatusCode: http.StatusOK,
+		expectedLocation:   "/",
+	},
+	{
+		name:               "res-not-in-session",
+		reservation:        models.Reservation{},
+		url:                "/reservation-summary",
+		expectedStatusCode: http.StatusSeeOther,
+		expectedLocation:   "/",
+	},
+}
+
+// Test GET /reservation-summary
+func TestRepository_ReservationSummary(t *testing.T) {
+	for _, e := range reservationSummaryTests {
+		req, _ := http.NewRequest("GET", e.url, nil)
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		rr := httptest.NewRecorder()
+		if e.reservation.RoomID > 0 {
+			session.Put(ctx, "reservation", e.reservation)
+		}
+
+		handler := http.HandlerFunc(Repo.ReservationSummary)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("%s returned wrong response code: got %d, wanted %d", e.name, rr.Code, e.expectedStatusCode)
+		}
+	}
+}
+
 var loginTests = []struct {
 	name               string
 	email              string
