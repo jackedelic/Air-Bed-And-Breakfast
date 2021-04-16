@@ -47,7 +47,7 @@ func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
-// AddDefaultData adds more data onto the input TemplateData, and returns the extended TemplateData
+// AddDefaultData adds more data (e.g CSRFToken) onto the input TemplateData, and returns the extended TemplateData
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Error = app.Session.PopString(r.Context(), "error")
