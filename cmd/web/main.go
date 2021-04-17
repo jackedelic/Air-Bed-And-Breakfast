@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -58,11 +59,37 @@ func run() error {
 	gob.Register(models.RoomRestriction{})
 	gob.Register(map[string]int{})
 
+	// read flags
+	inProd := flag.Bool("production", false, "Application is not in production mode by default")
+	useCache := flag.Bool("cache", false, "Not using template cache by default")
+	dbHost := flag.String("dbhost", "localhost", "Database host")
+	dbPort := flag.Int("dbport", 5432, "Database port is 5432 by default")
+	dbName := flag.String("dbname", "", "Database name")
+	dbUser := flag.String("dbuser", "", "Database username")
+	dbPass := flag.String("dbpassword", "password", "Database password is password by default")
+	dbSSL := flag.String("dbssl", "disable", "Database ssl settings (disable, prefer, require)")
+
+	flag.Parse()
+
+	app.InProduction = *inProd
+	app.UseCache = *useCache
+	app.DBHost = *dbHost
+	app.DBPort = *dbPort
+	app.DBName = *dbName
+	app.DBUser = *dbUser
+	app.DBPassword = *dbPass
+	app.DBSSL = *dbSSL
+
+	if app.DBName == "" || app.DBUser == "" {
+		log.Println(app)
+		log.Println("Misssing required flags")
+		os.Exit(1)
+	}
+
 	// Initialize MailChan to app config
 	mailChan := make(chan models.MailData)
 	app.MailChan = mailChan
 
-	app.InProduction = false // Change this to true when in production
 	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.ErrorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
@@ -82,7 +109,6 @@ func run() error {
 	}
 
 	app.TemplateCache = templateCache
-	app.UseCache = false
 
 	// handlers and render packages have access to the same config.AppConfig
 	repo := handlers.NewRepo(&app, driver.DB{}) // create a new repo holding the app config we just created
@@ -97,11 +123,11 @@ func run() error {
 func connectDB() (*driver.DB, error) {
 	// Connects to database
 	var (
-		host     = "127.0.0.1"
-		port     = 5432
-		database = "bookings"
-		username = "postgres"
-		password = "password"
+		host     = app.DBHost
+		port     = app.DBPort
+		database = app.DBName
+		username = app.DBUser
+		password = app.DBPassword
 	)
 
 	conn, err := driver.ConnectDB(fmt.Sprintf("host=%s port=%d database=%s user=%s password=%s", host, port, database, username, password))
